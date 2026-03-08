@@ -3,3 +3,5 @@ Thumbs.db
 *.swp
 *.swo
 *~
+.wrangler/
+node_modules/
