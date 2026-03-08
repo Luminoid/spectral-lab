@@ -1,85 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hans">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spectral Lab — Light & Signal Visualization</title>
-  <meta name="description" content="Interactive physics-based visualization toolkit. Six real-time generators for prism refraction, gravitational lensing, emission nebulae, topographic maps, waveforms, and moiré patterns. Download 4K PNG exports.">
-  <meta property="og:title" content="Spectral Lab — Light & Signal Visualization">
-  <meta property="og:description" content="Six interactive generators for optics, astrophysics, and signal visualization. Real physics, real-time rendering, 4K export.">
+  <title>Spectral Lab — 光学与信号可视化</title>
+  <meta name="description" content="交互式物理可视化工具。六个实时生成器：棱镜折射、引力透镜、发射星云、等高线地图、脉冲波形与莫尔条纹。支持 4K PNG 导出。">
+  <meta property="og:title" content="Spectral Lab — 光学与信号可视化">
+  <meta property="og:description" content="六个交互式生成器，涵盖光学、天体物理与信号可视化。真实物理、实时渲染、4K 导出。">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://lab.luminoid.dev">
+  <meta property="og:url" content="https://lab.luminoid.dev/zh/">
   <meta property="og:image" content="https://lab.luminoid.dev/icons/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://lab.luminoid.dev/icons/og-image.png">
-  <meta name="twitter:title" content="Spectral Lab">
-  <meta name="twitter:description" content="Interactive physics-based visualization toolkit — prism refraction, gravitational lensing, nebulae, topographic maps, waveforms, and moiré patterns.">
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="twitter:title" content="Spectral Lab — 光学与信号可视化">
+  <meta name="twitter:description" content="交互式物理可视化工具 — 棱镜折射、引力透镜、星云、等高线地图、波形与莫尔条纹。">
+  <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="alternate" hreflang="en" href="https://lab.luminoid.dev/">
   <link rel="alternate" hreflang="zh" href="https://lab.luminoid.dev/zh/">
   <link rel="alternate" hreflang="x-default" href="https://lab.luminoid.dev/">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
 
 <header>
   <h1><span>Spectral</span> Lab</h1>
-  <a href="/zh/" class="lang-switch">中文</a>
+  <a href="/" class="lang-switch">English</a>
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active" data-tab="prism">Prism Refraction</button>
-  <button class="tab-btn" data-tab="waveform">Pulse Profile</button>
-  <button class="tab-btn" data-tab="lensing">Gravitational Lensing</button>
-  <button class="tab-btn" data-tab="nebula">Nebula</button>
-  <button class="tab-btn" data-tab="topographic">Topographic</button>
-  <button class="tab-btn" data-tab="moire">Moir&eacute; Pattern</button>
+  <button class="tab-btn active" data-tab="prism">棱镜折射</button>
+  <button class="tab-btn" data-tab="waveform">脉冲轮廓</button>
+  <button class="tab-btn" data-tab="lensing">引力透镜</button>
+  <button class="tab-btn" data-tab="nebula">星云</button>
+  <button class="tab-btn" data-tab="topographic">等高线</button>
+  <button class="tab-btn" data-tab="moire">莫尔条纹</button>
 </div>
 
 <!-- ============ PRISM GENERATOR ============ -->
 <div class="generator active" id="gen-prism">
   <div class="controls">
     <div class="control-group">
-      <label>Glass Type</label>
+      <label>玻璃类型</label>
       <select id="p-glass">
-        <option value="bk7">BK7 Borosilicate (n 1.51-1.54)</option>
-        <option value="crown">Crown K9 (n 1.51-1.54)</option>
-        <option value="flint">Dense Flint SF11 (n 1.74-1.81)</option>
-        <option value="diamond">Diamond (n 2.41-2.45)</option>
+        <option value="bk7">BK7 硼硅酸盐 (n 1.51-1.54)</option>
+        <option value="crown">冕牌 K9 (n 1.51-1.54)</option>
+        <option value="flint">重火石 SF11 (n 1.74-1.81)</option>
+        <option value="diamond">钻石 (n 2.41-2.45)</option>
       </select>
     </div>
     <div class="control-group">
-      <label>Prism Angle <span class="value" id="v-p-prismAngle">60</span>&deg;</label>
+      <label>棱镜角度 <span class="value" id="v-p-prismAngle">60</span>&deg;</label>
       <input type="range" id="p-prismAngle" min="30" max="120" value="60" step="1">
     </div>
     <div class="control-group">
-      <label>Incident Angle <span class="value" id="v-p-incidentAngle">49</span>&deg;</label>
+      <label>入射角 <span class="value" id="v-p-incidentAngle">49</span>&deg;</label>
       <input type="range" id="p-incidentAngle" min="10" max="85" value="49" step="1">
     </div>
     <div class="control-group">
-      <label>Rotation <span class="value" id="v-p-rotation">0</span>&deg;</label>
+      <label>旋转 <span class="value" id="v-p-rotation">0</span>&deg;</label>
       <input type="range" id="p-rotation" min="-180" max="180" value="0" step="1">
     </div>
     <div class="control-group">
-      <label>Spread Multiplier <span class="value" id="v-p-spread">10</span>x</label>
+      <label>色散倍率 <span class="value" id="v-p-spread">10</span>x</label>
       <input type="range" id="p-spread" min="1" max="30" value="10" step="1">
     </div>
     <div class="control-group">
-      <label>Prism Size <span class="value" id="v-p-prismScale">32</span>%</label>
+      <label>棱镜大小 <span class="value" id="v-p-prismScale">32</span>%</label>
       <input type="range" id="p-prismScale" min="15" max="50" value="32" step="1">
     </div>
     <div class="control-group">
-      <label>Beam Width <span class="value" id="v-p-beamWidth">22</span></label>
+      <label>光束宽度 <span class="value" id="v-p-beamWidth">22</span></label>
       <input type="range" id="p-beamWidth" min="5" max="50" value="22" step="1">
     </div>
     <div class="control-group">
       <label class="checkbox-row">
-        <input type="checkbox" id="p-stars" checked> Star field
+        <input type="checkbox" id="p-stars" checked> 星空背景
       </label>
       <label class="checkbox-row">
-        <input type="checkbox" id="p-bloom" checked> Bloom
+        <input type="checkbox" id="p-bloom" checked> 泛光
       </label>
     </div>
   </div>
@@ -89,8 +89,8 @@
     </div>
     <div class="info-bar" id="prism-info"></div>
     <div class="btn-row">
-      <button class="btn" id="prism-download">Download PNG</button>
-      <button class="btn secondary" id="prism-download-hd">Download 4K</button>
+      <button class="btn" id="prism-download">下载 PNG</button>
+      <button class="btn secondary" id="prism-download-hd">下载 4K</button>
     </div>
   </div>
 </div>
@@ -99,50 +99,50 @@
 <div class="generator" id="gen-waveform">
   <div class="controls">
     <div class="control-group">
-      <label>Lines <span class="value" id="v-w-lineCount">60</span></label>
+      <label>线条数 <span class="value" id="v-w-lineCount">60</span></label>
       <input type="range" id="w-lineCount" min="10" max="120" value="60" step="1">
     </div>
     <div class="control-group">
-      <label>Amplitude <span class="value" id="v-w-amplitude">1.0</span></label>
+      <label>振幅 <span class="value" id="v-w-amplitude">1.0</span></label>
       <input type="range" id="w-amplitude" min="0.1" max="3.0" value="1.0" step="0.1">
     </div>
     <div class="control-group">
-      <label>Noise <span class="value" id="v-w-noise">0.3</span></label>
+      <label>噪声 <span class="value" id="v-w-noise">0.3</span></label>
       <input type="range" id="w-noise" min="0" max="1.0" value="0.3" step="0.05">
     </div>
     <div class="control-group">
-      <label>Peaks <span class="value" id="v-w-peakCount">3</span></label>
+      <label>波峰数 <span class="value" id="v-w-peakCount">3</span></label>
       <input type="range" id="w-peakCount" min="1" max="8" value="3" step="1">
     </div>
     <div class="control-group">
-      <label>Peak Width <span class="value" id="v-w-peakWidth">0.05</span></label>
+      <label>波峰宽度 <span class="value" id="v-w-peakWidth">0.05</span></label>
       <input type="range" id="w-peakWidth" min="0.01" max="0.20" value="0.05" step="0.01">
     </div>
     <div class="control-group">
-      <label>Center Bias <span class="value" id="v-w-centerBias">0.6</span></label>
+      <label>中心集中度 <span class="value" id="v-w-centerBias">0.6</span></label>
       <input type="range" id="w-centerBias" min="0.1" max="1.0" value="0.6" step="0.05">
     </div>
     <div class="control-group">
-      <label>Line Width <span class="value" id="v-w-lineWidth">1.5</span></label>
+      <label>线宽 <span class="value" id="v-w-lineWidth">1.5</span></label>
       <input type="range" id="w-lineWidth" min="0.5" max="4.0" value="1.5" step="0.5">
     </div>
     <div class="control-group">
-      <label>Stroke Color
+      <label>线条颜色
         <input type="color" id="w-strokeColor" value="#ffffff">
       </label>
     </div>
     <div class="control-group">
-      <label>Background
+      <label>背景色
         <input type="color" id="w-bgColor" value="#000000">
       </label>
     </div>
     <div class="control-group">
-      <label>Seed <span class="value" id="v-w-seed">1979</span></label>
+      <label>种子 <span class="value" id="v-w-seed">1979</span></label>
       <input type="range" id="w-seed" min="1" max="9999" value="1979" step="1">
     </div>
     <div class="control-group">
       <label class="checkbox-row">
-        <input type="checkbox" id="w-fillBelow" checked> Mountain fill
+        <input type="checkbox" id="w-fillBelow" checked> 山形填充
       </label>
     </div>
   </div>
@@ -152,9 +152,9 @@
     </div>
     <div class="info-bar" id="waveform-info"></div>
     <div class="btn-row">
-      <button class="btn" id="waveform-download">Download PNG</button>
-      <button class="btn secondary" id="waveform-download-hd">Download 4K</button>
-      <button class="btn secondary" id="waveform-randomize">Randomize</button>
+      <button class="btn" id="waveform-download">下载 PNG</button>
+      <button class="btn secondary" id="waveform-download-hd">下载 4K</button>
+      <button class="btn secondary" id="waveform-randomize">随机</button>
     </div>
   </div>
 </div>
@@ -163,44 +163,44 @@
 <div class="generator" id="gen-lensing">
   <div class="controls">
     <div class="control-group">
-      <label>Mass <span class="value" id="v-l-mass">80</span></label>
+      <label>质量 <span class="value" id="v-l-mass">80</span></label>
       <input type="range" id="l-mass" min="10" max="100" value="80" step="1">
     </div>
     <div class="control-group">
-      <label>Source X <span class="value" id="v-l-sourceX">30</span></label>
+      <label>光源 X <span class="value" id="v-l-sourceX">30</span></label>
       <input type="range" id="l-sourceX" min="-300" max="300" value="30" step="5">
     </div>
     <div class="control-group">
-      <label>Source Y <span class="value" id="v-l-sourceY">-20</span></label>
+      <label>光源 Y <span class="value" id="v-l-sourceY">-20</span></label>
       <input type="range" id="l-sourceY" min="-300" max="300" value="-20" step="5">
     </div>
     <div class="control-group">
-      <label>Source Size <span class="value" id="v-l-sourceSize">30</span></label>
+      <label>光源大小 <span class="value" id="v-l-sourceSize">30</span></label>
       <input type="range" id="l-sourceSize" min="5" max="80" value="30" step="1">
     </div>
     <div class="control-group">
-      <label>Einstein Radius <span class="value" id="v-l-einsteinRadius">200</span></label>
+      <label>爱因斯坦半径 <span class="value" id="v-l-einsteinRadius">200</span></label>
       <input type="range" id="l-einsteinRadius" min="50" max="500" value="200" step="10">
     </div>
     <div class="control-group">
-      <label>Ring Brightness <span class="value" id="v-l-ringBrightness">80</span>%</label>
+      <label>环亮度 <span class="value" id="v-l-ringBrightness">80</span>%</label>
       <input type="range" id="l-ringBrightness" min="10" max="100" value="80" step="5">
     </div>
     <div class="control-group">
-      <label>Distortion <span class="value" id="v-l-distortion">1.0</span></label>
+      <label>形变 <span class="value" id="v-l-distortion">1.0</span></label>
       <input type="range" id="l-distortion" min="0.1" max="3.0" value="1.0" step="0.1">
     </div>
     <div class="control-group">
-      <label>Color Shift <span class="value" id="v-l-colorShift">0</span>&deg;</label>
+      <label>色相偏移 <span class="value" id="v-l-colorShift">0</span>&deg;</label>
       <input type="range" id="l-colorShift" min="0" max="360" value="0" step="5">
     </div>
     <div class="control-group">
-      <label>Stars <span class="value" id="v-l-starCount">300</span></label>
+      <label>星星 <span class="value" id="v-l-starCount">300</span></label>
       <input type="range" id="l-starCount" min="50" max="800" value="300" step="10">
     </div>
     <div class="control-group">
       <label class="checkbox-row">
-        <input type="checkbox" id="l-showGrid"> Distortion grid
+        <input type="checkbox" id="l-showGrid"> 形变网格
       </label>
     </div>
   </div>
@@ -210,8 +210,8 @@
     </div>
     <div class="info-bar" id="lensing-info"></div>
     <div class="btn-row">
-      <button class="btn" id="lensing-download">Download PNG</button>
-      <button class="btn secondary" id="lensing-download-hd">Download 4K</button>
+      <button class="btn" id="lensing-download">下载 PNG</button>
+      <button class="btn secondary" id="lensing-download-hd">下载 4K</button>
     </div>
   </div>
 </div>
@@ -220,44 +220,44 @@
 <div class="generator" id="gen-nebula">
   <div class="controls">
     <div class="control-group">
-      <label>Palette</label>
+      <label>配色</label>
       <select id="n-palette">
-        <option value="emission">Emission (True Color)</option>
-        <option value="hubble">Hubble SHO</option>
-        <option value="reflection">Reflection</option>
-        <option value="planetary">Planetary</option>
+        <option value="emission">发射星云（真彩色）</option>
+        <option value="hubble">哈勃 SHO</option>
+        <option value="reflection">反射星云</option>
+        <option value="planetary">行星状星云</option>
       </select>
     </div>
     <div class="control-group">
-      <label>Scale <span class="value" id="v-n-scale">3.0</span></label>
+      <label>比例 <span class="value" id="v-n-scale">3.0</span></label>
       <input type="range" id="n-scale" min="1.0" max="8.0" value="3.0" step="0.5">
     </div>
     <div class="control-group">
-      <label>Density <span class="value" id="v-n-density">60</span>%</label>
+      <label>密度 <span class="value" id="v-n-density">60</span>%</label>
       <input type="range" id="n-density" min="10" max="100" value="60" step="5">
     </div>
     <div class="control-group">
-      <label>Turbulence <span class="value" id="v-n-turbulence">6</span></label>
+      <label>湍流 <span class="value" id="v-n-turbulence">6</span></label>
       <input type="range" id="n-turbulence" min="2" max="8" value="6" step="1">
     </div>
     <div class="control-group">
-      <label>Stars <span class="value" id="v-n-starCount">500</span></label>
+      <label>星星 <span class="value" id="v-n-starCount">500</span></label>
       <input type="range" id="n-starCount" min="50" max="1500" value="500" step="50">
     </div>
     <div class="control-group">
-      <label>Star Brightness <span class="value" id="v-n-starBrightness">80</span>%</label>
+      <label>星光亮度 <span class="value" id="v-n-starBrightness">80</span>%</label>
       <input type="range" id="n-starBrightness" min="10" max="100" value="80" step="5">
     </div>
     <div class="control-group">
-      <label>Hue Shift <span class="value" id="v-n-hueShift">0</span>&deg;</label>
+      <label>色相偏移 <span class="value" id="v-n-hueShift">0</span>&deg;</label>
       <input type="range" id="n-hueShift" min="0" max="360" value="0" step="5">
     </div>
     <div class="control-group">
-      <label>Contrast <span class="value" id="v-n-contrast">50</span></label>
+      <label>对比度 <span class="value" id="v-n-contrast">50</span></label>
       <input type="range" id="n-contrast" min="10" max="90" value="50" step="5">
     </div>
     <div class="control-group">
-      <label>Seed <span class="value" id="v-n-seed">42</span></label>
+      <label>种子 <span class="value" id="v-n-seed">42</span></label>
       <input type="range" id="n-seed" min="1" max="9999" value="42" step="1">
     </div>
   </div>
@@ -267,9 +267,9 @@
     </div>
     <div class="info-bar" id="nebula-info"></div>
     <div class="btn-row">
-      <button class="btn" id="nebula-download">Download PNG</button>
-      <button class="btn secondary" id="nebula-download-hd">Download 4K</button>
-      <button class="btn secondary" id="nebula-randomize">Randomize</button>
+      <button class="btn" id="nebula-download">下载 PNG</button>
+      <button class="btn secondary" id="nebula-download-hd">下载 4K</button>
+      <button class="btn secondary" id="nebula-randomize">随机</button>
     </div>
   </div>
 </div>
@@ -278,48 +278,48 @@
 <div class="generator" id="gen-topographic">
   <div class="controls">
     <div class="control-group">
-      <label>Palette</label>
+      <label>配色</label>
       <select id="t-palette">
-        <option value="swiss">Swiss</option>
-        <option value="ocean">Ocean</option>
-        <option value="earth">Earth</option>
-        <option value="mono">Mono</option>
+        <option value="swiss">瑞士</option>
+        <option value="ocean">海洋</option>
+        <option value="earth">大地</option>
+        <option value="mono">单色</option>
       </select>
     </div>
     <div class="control-group">
-      <label>Contours <span class="value" id="v-t-contourCount">20</span></label>
+      <label>等高线 <span class="value" id="v-t-contourCount">20</span></label>
       <input type="range" id="t-contourCount" min="5" max="50" value="20" step="1">
     </div>
     <div class="control-group">
-      <label>Scale <span class="value" id="v-t-scale">3.0</span></label>
+      <label>比例 <span class="value" id="v-t-scale">3.0</span></label>
       <input type="range" id="t-scale" min="1.0" max="8.0" value="3.0" step="0.5">
     </div>
     <div class="control-group">
-      <label>Offset X <span class="value" id="v-t-offsetX">0</span></label>
+      <label>偏移 X <span class="value" id="v-t-offsetX">0</span></label>
       <input type="range" id="t-offsetX" min="-10" max="10" value="0" step="0.5">
     </div>
     <div class="control-group">
-      <label>Offset Y <span class="value" id="v-t-offsetY">0</span></label>
+      <label>偏移 Y <span class="value" id="v-t-offsetY">0</span></label>
       <input type="range" id="t-offsetY" min="-10" max="10" value="0" step="0.5">
     </div>
     <div class="control-group">
-      <label>Octaves <span class="value" id="v-t-octaves">5</span></label>
+      <label>八度 <span class="value" id="v-t-octaves">5</span></label>
       <input type="range" id="t-octaves" min="1" max="8" value="5" step="1">
     </div>
     <div class="control-group">
-      <label>Line Width <span class="value" id="v-t-lineWidth">1.5</span></label>
+      <label>线宽 <span class="value" id="v-t-lineWidth">1.5</span></label>
       <input type="range" id="t-lineWidth" min="0.5" max="4.0" value="1.5" step="0.5">
     </div>
     <div class="control-group">
-      <label>Seed <span class="value" id="v-t-seed">42</span></label>
+      <label>种子 <span class="value" id="v-t-seed">42</span></label>
       <input type="range" id="t-seed" min="1" max="9999" value="42" step="1">
     </div>
     <div class="control-group">
       <label class="checkbox-row">
-        <input type="checkbox" id="t-fillBands" checked> Color fill
+        <input type="checkbox" id="t-fillBands" checked> 颜色填充
       </label>
       <label class="checkbox-row">
-        <input type="checkbox" id="t-showLines" checked> Contour lines
+        <input type="checkbox" id="t-showLines" checked> 等高线
       </label>
     </div>
   </div>
@@ -329,9 +329,9 @@
     </div>
     <div class="info-bar" id="topographic-info"></div>
     <div class="btn-row">
-      <button class="btn" id="topographic-download">Download PNG</button>
-      <button class="btn secondary" id="topographic-download-hd">Download 4K</button>
-      <button class="btn secondary" id="topographic-randomize">Randomize</button>
+      <button class="btn" id="topographic-download">下载 PNG</button>
+      <button class="btn secondary" id="topographic-download-hd">下载 4K</button>
+      <button class="btn secondary" id="topographic-randomize">随机</button>
     </div>
   </div>
 </div>
@@ -340,62 +340,62 @@
 <div class="generator" id="gen-moire">
   <div class="controls">
     <div class="control-group">
-      <label>Pattern</label>
+      <label>图案</label>
       <select id="m-pattern">
-        <option value="lines">Lines</option>
-        <option value="circles">Circles</option>
-        <option value="dots">Dots</option>
-        <option value="radial">Radial</option>
+        <option value="lines">线条</option>
+        <option value="circles">圆环</option>
+        <option value="dots">点阵</option>
+        <option value="radial">放射</option>
       </select>
     </div>
     <div class="control-group">
-      <label>Blend Mode</label>
+      <label>混合模式</label>
       <select id="m-blendMode">
-        <option value="multiply">Multiply</option>
-        <option value="screen">Screen</option>
-        <option value="difference">Difference</option>
+        <option value="multiply">正片叠底</option>
+        <option value="screen">滤色</option>
+        <option value="difference">差值</option>
       </select>
     </div>
     <div class="control-group">
-      <label>Frequency <span class="value" id="v-m-frequency">30</span></label>
+      <label>频率 <span class="value" id="v-m-frequency">30</span></label>
       <input type="range" id="m-frequency" min="5" max="80" value="30" step="1">
     </div>
     <div class="control-group">
-      <label>Rotation 1 <span class="value" id="v-m-rotation1">0</span>&deg;</label>
+      <label>旋转 1 <span class="value" id="v-m-rotation1">0</span>&deg;</label>
       <input type="range" id="m-rotation1" min="0" max="180" value="0" step="0.5">
     </div>
     <div class="control-group">
-      <label>Rotation 2 <span class="value" id="v-m-rotation2">5</span>&deg;</label>
+      <label>旋转 2 <span class="value" id="v-m-rotation2">5</span>&deg;</label>
       <input type="range" id="m-rotation2" min="0" max="180" value="5" step="0.5">
     </div>
     <div class="control-group">
-      <label>Offset X <span class="value" id="v-m-offsetX">0</span></label>
+      <label>偏移 X <span class="value" id="v-m-offsetX">0</span></label>
       <input type="range" id="m-offsetX" min="-200" max="200" value="0" step="5">
     </div>
     <div class="control-group">
-      <label>Offset Y <span class="value" id="v-m-offsetY">0</span></label>
+      <label>偏移 Y <span class="value" id="v-m-offsetY">0</span></label>
       <input type="range" id="m-offsetY" min="-200" max="200" value="0" step="5">
     </div>
     <div class="control-group">
-      <label>Amplitude <span class="value" id="v-m-amplitude">1.0</span></label>
+      <label>振幅 <span class="value" id="v-m-amplitude">1.0</span></label>
       <input type="range" id="m-amplitude" min="0.2" max="1.0" value="1.0" step="0.05">
     </div>
     <div class="control-group">
-      <label>Layer 2 Scale <span class="value" id="v-m-scale2">100</span>%</label>
+      <label>图层 2 缩放 <span class="value" id="v-m-scale2">100</span>%</label>
       <input type="range" id="m-scale2" min="80" max="120" value="100" step="1">
     </div>
     <div class="control-group">
-      <label>Color 1
+      <label>颜色 1
         <input type="color" id="m-color1" value="#ffffff">
       </label>
     </div>
     <div class="control-group">
-      <label>Color 2
+      <label>颜色 2
         <input type="color" id="m-color2" value="#ffffff">
       </label>
     </div>
     <div class="control-group">
-      <label>Background
+      <label>背景色
         <input type="color" id="m-bgColor" value="#000000">
       </label>
     </div>
@@ -406,26 +406,26 @@
     </div>
     <div class="info-bar" id="moire-info"></div>
     <div class="btn-row">
-      <button class="btn" id="moire-download">Download PNG</button>
-      <button class="btn secondary" id="moire-download-hd">Download 4K</button>
+      <button class="btn" id="moire-download">下载 PNG</button>
+      <button class="btn secondary" id="moire-download-hd">下载 4K</button>
     </div>
   </div>
 </div>
 
 <footer>
-  Spectral Lab &mdash; optics, astrophysics &amp; signal visualization toolkit
+  Spectral Lab &mdash; 光学 · 天体物理 · 信号可视化
   <br>&copy; 2026 Luminoid &middot; CC BY-NC 4.0
 </footer>
 
-<script src="noise.js"></script>
-<script src="prism.js"></script>
-<script src="waveform.js"></script>
-<script src="lensing.js"></script>
-<script src="topographic.js"></script>
-<script src="moire.js"></script>
-<script src="nebula.js"></script>
-<script src="i18n.js"></script>
-<script src="app.js"></script>
+<script src="../noise.js"></script>
+<script src="../prism.js"></script>
+<script src="../waveform.js"></script>
+<script src="../lensing.js"></script>
+<script src="../topographic.js"></script>
+<script src="../moire.js"></script>
+<script src="../nebula.js"></script>
+<script src="../i18n.js"></script>
+<script src="../app.js"></script>
 
 </body>
 </html>

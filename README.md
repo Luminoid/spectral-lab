@@ -102,8 +102,10 @@ python3 -m http.server 8000
 
 ```
 spectral-lab/
-  index.html      # UI, controls, tab switching
+  index.html      # UI, controls, tab switching (English)
+  zh/index.html   # Chinese (zh-Hans) translation
   app.js          # Event binding, config extraction, render scheduling
+  i18n.js         # Language detection and JS string translations
   prism.js        # Prism refraction renderer
   waveform.js     # Pulse profile renderer
   lensing.js      # Gravitational lensing renderer
@@ -112,8 +114,9 @@ spectral-lab/
   moire.js        # Moiré pattern renderer
   noise.js        # Shared utilities (PRNG, Perlin noise, color conversions)
   styles.css      # Dark theme styling
-  icons/          # Favicons and touch icons
+  icons/          # Favicons, touch icons, OG image
   _headers        # Cloudflare Pages security headers
+  _redirects      # Cloudflare Pages language redirect
   LICENSE         # CC BY-NC 4.0
 ```
 

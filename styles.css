@@ -46,6 +46,23 @@ header h1 span {
   color: var(--accent);
 }
 
+/* --- Language switcher --- */
+
+.lang-switch {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.lang-switch:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* --- Tabs --- */
 
 .tabs {

@@ -116,12 +116,12 @@ function updatePrism() {
   const config = getPrismConfig();
   const result = renderPrism(prismCanvas, config);
   if (result.tir) {
-    prismInfo.innerHTML = '<span class="tir-warning">Total internal reflection — light cannot exit at these angles</span>';
+    prismInfo.innerHTML = `<span class="tir-warning">${t('tirWarning')}</span>`;
   } else {
     prismInfo.textContent =
-      `Deviation: ${result.deviation}\u00B0 | ` +
-      `Beam: ${result.beamDirection}\u00B0 | ` +
-      `Exit: ${result.exitDirection}\u00B0`;
+      `${t('deviation')}: ${result.deviation}\u00B0 | ` +
+      `${t('beam')}: ${result.beamDirection}\u00B0 | ` +
+      `${t('exit')}: ${result.exitDirection}\u00B0`;
   }
 }
 
@@ -203,7 +203,7 @@ function getLensingConfig() {
 function updateLensing() {
   const result = renderLensing(lensingCanvas, getLensingConfig());
   lensingInfo.textContent =
-    `Einstein radius: ${result.einsteinRadius} | Alignment: ${result.alignment}%`;
+    `${t('einsteinRadius')}: ${result.einsteinRadius} | ${t('alignment')}: ${result.alignment}%`;
 }
 
 bindControls('lensing', 'l', scheduleLensing);
@@ -241,7 +241,7 @@ function getTopoConfig() {
 function updateTopo() {
   const result = renderTopographic(topoCanvas, getTopoConfig());
   topoInfo.textContent =
-    `Contours: ${result.contours} | Scale: ${result.scale}`;
+    `${t('contours')}: ${result.contours} | ${t('scale')}: ${result.scale}`;
 }
 
 bindControls('topographic', 't', scheduleTopo);
@@ -288,7 +288,7 @@ function getMoireConfig() {
 function updateMoire() {
   const result = renderMoire(moireCanvas, getMoireConfig());
   moireInfo.textContent =
-    `Pattern: ${result.pattern} | \u0394\u03B8: ${result.angleDiff}\u00B0 | Fringe freq: ${result.fringeFreq}`;
+    `${t('pattern')}: ${result.pattern} | \u0394\u03B8: ${result.angleDiff}\u00B0 | ${t('fringeFreq')}: ${result.fringeFreq}`;
 }
 
 bindControls('moire', 'm', scheduleMoire);
@@ -325,7 +325,7 @@ function getNebulaConfig() {
 function updateNebula() {
   const result = renderNebula(nebulaCanvas, getNebulaConfig());
   nebulaInfo.textContent =
-    `Stars: ${result.stars} | Palette: ${result.palette}`;
+    `${t('stars')}: ${result.stars} | ${t('palette')}: ${result.palette}`;
 }
 
 bindControls('nebula', 'n', scheduleNebula);
