@@ -11,8 +11,8 @@ Interactive physics-based light and signal visualization tool. Six generators:
 
 ## TODO
 
-- [ ] **Solar Flare** — Re-add with improved visuals (Perlin granulation, luminous prominences, equatorial corona streamers, chromatic limb darkening). Code exists in `flare.js`
-- [ ] **Galaxy Spiral** — Re-add with improved visuals (foggy disc haze, noise-modulated dust lanes, foreground diffraction-spike stars, background galaxies, ridged multi-fractal arms). Code exists in `galaxy.js`
+- [ ] **Solar Flare** — Re-add with improved visuals (Perlin granulation, luminous prominences, equatorial corona streamers, chromatic limb darkening). Recoverable from git history
+- [ ] **Galaxy Spiral** — Re-add with improved visuals (foggy disc haze, noise-modulated dust lanes, foreground diffraction-spike stars, background galaxies, ridged multi-fractal arms). Recoverable from git history
 
 ## Features
 
@@ -110,11 +110,12 @@ spectral-lab/
   nebula.js       # Emission nebula renderer
   topographic.js  # Topographic contour renderer
   moire.js        # Moiré pattern renderer
-  flare.js        # Solar flare renderer (TODO: re-add)
-  galaxy.js       # Galaxy spiral renderer (TODO: re-add)
+  noise.js        # Shared utilities (PRNG, Perlin noise, color conversions)
   styles.css      # Dark theme styling
+  _headers        # Cloudflare Pages security headers
+  LICENSE         # CC BY-NC 4.0
 ```
 
 ## License
 
-MIT
+CC BY-NC 4.0 — Non-commercial use. Generated images are free to use, including commercially.
