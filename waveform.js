@@ -1,19 +1,7 @@
 // Stacked Pulse Profile Renderer — pulsar radio intensity visualization
 // Based on the technique used to plot CP 1919 data (Harold Craft, 1970)
 
-function seededRngWave(seed) {
-  return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
-}
-
-function gaussianNoise(rng) {
-  // Box-Muller transform
-  const u1 = rng();
-  const u2 = rng();
-  return Math.sqrt(-2 * Math.log(u1 + 0.0001)) * Math.cos(2 * Math.PI * u2);
-}
+// seededRng and gaussianNoise provided by noise.js
 
 // Reusable buffers — avoids allocating 2 Float64Arrays per line
 let _wavePoints = null;
@@ -98,7 +86,7 @@ function renderWaveform(canvas, config = {}) {
     seed = 1979,
   } = config;
 
-  const rng = seededRngWave(seed);
+  const rng = seededRng(seed);
 
   // Canvas setup
   ctx.fillStyle = backgroundColor;

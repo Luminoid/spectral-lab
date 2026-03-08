@@ -2,70 +2,34 @@
 // Based on USGS/Swiss cartographic traditions (Eduard Imhof principles)
 // Terrain: fBM + ridged noise, contours via marching squares, Imhof-style hillshading
 
-function seededRngTopo(seed) {
-  return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
+// Cached upscale canvas — avoids creating a new canvas element per render
+let _topoTmpCanvas = null;
+let _topoTmpSize = 0;
+
+function getTopoTmpCanvas(size) {
+  if (!_topoTmpCanvas || _topoTmpSize !== size) {
+    _topoTmpCanvas = document.createElement('canvas');
+    _topoTmpCanvas.width = size;
+    _topoTmpCanvas.height = size;
+    _topoTmpSize = size;
+  }
+  return _topoTmpCanvas;
 }
 
-// --- Gradient noise (Perlin-style) with permutation table ---
-function createNoiseField(seed) {
-  const rng = seededRngTopo(seed);
-  const size = 256;
-  const perm = new Uint8Array(size * 2);
-  for (let i = 0; i < size; i++) perm[i] = i;
-  for (let i = size - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [perm[i], perm[j]] = [perm[j], perm[i]];
-  }
-  for (let i = 0; i < size; i++) perm[size + i] = perm[i];
+// seededRng and createNoise provided by noise.js
 
-  const gradX = new Float64Array(size);
-  const gradY = new Float64Array(size);
-  for (let i = 0; i < size; i++) {
-    const a = rng() * Math.PI * 2;
-    gradX[i] = Math.cos(a);
-    gradY[i] = Math.sin(a);
-  }
-
-  function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-
-  function noise2d(x, y) {
-    const xi = Math.floor(x) & (size - 1);
-    const yi = Math.floor(y) & (size - 1);
-    const xf = x - Math.floor(x);
-    const yf = y - Math.floor(y);
-    const u = fade(xf);
-    const v = fade(yf);
-    const aa = perm[perm[xi] + yi];
-    const ab = perm[perm[xi] + yi + 1];
-    const ba = perm[perm[xi + 1] + yi];
-    const bb = perm[perm[xi + 1] + yi + 1];
-    const g00 = gradX[aa] * xf + gradY[aa] * yf;
-    const g10 = gradX[ba] * (xf - 1) + gradY[ba] * yf;
-    const g01 = gradX[ab] * xf + gradY[ab] * (yf - 1);
-    const g11 = gradX[bb] * (xf - 1) + gradY[bb] * (yf - 1);
-    return (g00 + u * (g10 - g00)) + v * ((g01 + u * (g11 - g01)) - (g00 + u * (g10 - g00)));
-  }
-
+// Topographic-specific noise wrapper: fbm returns [0,1] range (not [-1,1]),
+// and ridged uses weight-based feedback for terrain-appropriate mountain ridges
+function createTopoNoise(seed) {
+  const base = createNoise(seed);
   return {
-    // Standard fBM
     fbm(x, y, octaves, persistence) {
-      let val = 0, amp = 1, freq = 1, max = 0;
-      for (let o = 0; o < octaves; o++) {
-        val += noise2d(x * freq, y * freq) * amp;
-        max += amp;
-        amp *= persistence;
-        freq *= 2.0; // lacunarity
-      }
-      return (val / max + 1) * 0.5;
+      return base.fbm(x, y, octaves, persistence) * 0.5 + 0.5;
     },
-    // Ridged noise for mountain ridges: 1 - |noise| creates sharp peaks
     ridged(x, y, octaves, persistence) {
       let val = 0, amp = 1, freq = 1, weight = 1;
       for (let o = 0; o < octaves; o++) {
-        let signal = noise2d(x * freq, y * freq);
+        let signal = base.noise2d(x * freq, y * freq);
         signal = 1.0 - Math.abs(signal);
         signal *= signal;
         signal *= weight;
@@ -148,15 +112,15 @@ function renderTopographic(canvas, config = {}) {
     scale = 3.0,
     offsetX = 0,
     offsetY = 0,
-    octaves = 6,
+    octaves = 5,
     fillBands = true,
     showLines = true,
     seed = 42,
   } = config;
 
   const sc = W / 2048;
-  const noise = createNoiseField(seed);
-  const noise2 = createNoiseField(seed + 137);
+  const noise = createTopoNoise(seed);
+  const noise2 = createTopoNoise(seed + 137);
 
   // Generate height map at working resolution
   const res = Math.min(W, 512);
@@ -268,8 +232,7 @@ function renderTopographic(canvas, config = {}) {
   }
 
   // Draw to canvas via temp upscale
-  const tmp = document.createElement('canvas');
-  tmp.width = res; tmp.height = res;
+  const tmp = getTopoTmpCanvas(res);
   tmp.getContext('2d').putImageData(imgData, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';

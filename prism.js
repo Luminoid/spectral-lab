@@ -58,12 +58,7 @@ function raySegmentIntersect(origin, dir, segA, segB) {
   return [origin[0] + t * dir[0], origin[1] + t * dir[1]];
 }
 
-function seededRng(seed) {
-  return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
-}
+// seededRng provided by noise.js
 
 // --- Glass presets ---
 
@@ -189,12 +184,7 @@ function drawExitBands(
     for (const [wMul, baseAlpha] of layerDefs) {
       ctx.lineCap = "butt";
 
-      // Group segments with same color into runs to reduce state changes
-      // White blend only applies in first 20% of segments (12 of 60)
-      // Draw blended region (segments 0-11) individually, then batch the rest
-      let batchStart = 0;
-
-      // Blended region: color shifts per segment
+      // Blended region (segments 0-11): color shifts per segment, must draw individually
       for (let s = 0; s < segments && s < 12; s++) {
         const frac = s / segments;
         const sigma = Math.max(4, (6 + 42 * frac) * beamScale) * sc;
@@ -209,22 +199,33 @@ function drawExitBands(
         ctx.strokeStyle = `rgba(${cr},${cg},${cb},${baseAlpha})`;
         ctx.lineWidth = sigma * wMul;
         ctx.stroke();
-        batchStart = s + 1;
       }
 
-      // Uniform region: same color, batch into single path per width group
-      // Width still varies per segment, so group by similar widths
-      for (let s = batchStart; s < segments; s++) {
+      // Uniform region (segments 12-59): same color, group by quantized width
+      // to batch ~4-8 segments per stroke() call instead of one each
+      const uniformColor = `rgba(${r},${g},${b},${baseAlpha})`;
+      ctx.strokeStyle = uniformColor;
+      const widthBucketSize = 2 * sc; // quantize widths into 2px buckets
+      let currentBucketWidth = -1;
+
+      for (let s = 12; s < segments; s++) {
         const frac = s / segments;
         const sigma = Math.max(4, (6 + 42 * frac) * beamScale) * sc;
+        const targetWidth = sigma * wMul;
+        const bucketWidth = Math.round(targetWidth / widthBucketSize) * widthBucketSize;
 
-        ctx.beginPath();
+        if (bucketWidth !== currentBucketWidth) {
+          // Flush previous batch
+          if (currentBucketWidth > 0) ctx.stroke();
+          ctx.beginPath();
+          ctx.lineWidth = bucketWidth || targetWidth;
+          currentBucketWidth = bucketWidth;
+        }
         ctx.moveTo(xs[s], ys[s]);
         ctx.lineTo(xs[s + 1], ys[s + 1]);
-        ctx.strokeStyle = `rgba(${r},${g},${b},${baseAlpha})`;
-        ctx.lineWidth = sigma * wMul;
-        ctx.stroke();
       }
+      // Flush final batch
+      if (currentBucketWidth > 0) ctx.stroke();
     }
   }
 }

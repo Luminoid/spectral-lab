@@ -1,3 +1,24 @@
+// --- Shared HD export canvas — reused across all generators to avoid 64MB allocations ---
+let _hdCanvas = null;
+
+function getHdCanvas() {
+  if (!_hdCanvas) {
+    _hdCanvas = document.createElement('canvas');
+    _hdCanvas.width = 4096;
+    _hdCanvas.height = 4096;
+  }
+  return _hdCanvas;
+}
+
+function downloadHd(renderFn, configFn, filename) {
+  const hd = getHdCanvas();
+  renderFn(hd, configFn());
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = hd.toDataURL('image/png');
+  link.click();
+}
+
 // --- RAF debounce — prevents redundant renders during slider drag ---
 let _prismRaf = 0;
 let _waveRaf = 0;
@@ -61,6 +82,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+// --- Helper: bind controls and update value labels ---
+function bindControls(genId, prefix, scheduleFn) {
+  document.querySelectorAll(`#gen-${genId} .controls input, #gen-${genId} .controls select`).forEach(el => {
+    const event = el.type === 'range' ? 'input' : 'change';
+    el.addEventListener(event, () => {
+      const valueEl = document.getElementById('v-' + el.id);
+      if (valueEl) valueEl.textContent = el.value;
+      scheduleFn();
+    });
+  });
+}
+
 // --- Prism controls ---
 const prismCanvas = document.getElementById('prism-canvas');
 const prismInfo = document.getElementById('prism-info');
@@ -92,17 +125,8 @@ function updatePrism() {
   }
 }
 
-// Bind all prism controls
-document.querySelectorAll('#gen-prism .controls input, #gen-prism .controls select').forEach(el => {
-  const event = el.type === 'range' ? 'input' : 'change';
-  el.addEventListener(event, () => {
-    const valueEl = document.getElementById('v-' + el.id.replace('p-', ''));
-    if (valueEl) valueEl.textContent = el.value;
-    schedulePrism();
-  });
-});
+bindControls('prism', 'p', schedulePrism);
 
-// Download
 document.getElementById('prism-download').addEventListener('click', () => {
   const link = document.createElement('a');
   link.download = 'spectral-prism.png';
@@ -111,13 +135,7 @@ document.getElementById('prism-download').addEventListener('click', () => {
 });
 
 document.getElementById('prism-download-hd').addEventListener('click', () => {
-  const hd = document.createElement('canvas');
-  hd.width = 4096; hd.height = 4096;
-  renderPrism(hd, getPrismConfig());
-  const link = document.createElement('a');
-  link.download = 'spectral-prism-4k.png';
-  link.href = hd.toDataURL('image/png');
-  link.click();
+  downloadHd(renderPrism, getPrismConfig, 'spectral-prism-4k.png');
 });
 
 // --- Waveform controls ---
@@ -143,14 +161,7 @@ function updateWaveform() {
   renderWaveform(waveCanvas, getWaveConfig());
 }
 
-document.querySelectorAll('#gen-waveform .controls input').forEach(el => {
-  const event = (el.type === 'range') ? 'input' : 'change';
-  el.addEventListener(event, () => {
-    const valueEl = document.getElementById('v-' + el.id.replace('w-', ''));
-    if (valueEl) valueEl.textContent = el.value;
-    scheduleWaveform();
-  });
-});
+bindControls('waveform', 'w', scheduleWaveform);
 
 document.getElementById('waveform-download').addEventListener('click', () => {
   const link = document.createElement('a');
@@ -160,19 +171,13 @@ document.getElementById('waveform-download').addEventListener('click', () => {
 });
 
 document.getElementById('waveform-download-hd').addEventListener('click', () => {
-  const hd = document.createElement('canvas');
-  hd.width = 4096; hd.height = 4096;
-  renderWaveform(hd, getWaveConfig());
-  const link = document.createElement('a');
-  link.download = 'spectral-waveform-4k.png';
-  link.href = hd.toDataURL('image/png');
-  link.click();
+  downloadHd(renderWaveform, getWaveConfig, 'spectral-waveform-4k.png');
 });
 
 document.getElementById('waveform-randomize').addEventListener('click', () => {
   const seedInput = document.getElementById('w-seed');
   seedInput.value = Math.floor(Math.random() * 9999) + 1;
-  document.getElementById('v-seed').textContent = seedInput.value;
+  document.getElementById('v-w-seed').textContent = seedInput.value;
   scheduleWaveform();
 });
 
@@ -201,14 +206,7 @@ function updateLensing() {
     `Einstein radius: ${result.einsteinRadius} | Alignment: ${result.alignment}%`;
 }
 
-document.querySelectorAll('#gen-lensing .controls input, #gen-lensing .controls select').forEach(el => {
-  const event = el.type === 'range' ? 'input' : 'change';
-  el.addEventListener(event, () => {
-    const valueEl = document.getElementById('v-' + el.id);
-    if (valueEl) valueEl.textContent = el.value;
-    scheduleLensing();
-  });
-});
+bindControls('lensing', 'l', scheduleLensing);
 
 document.getElementById('lensing-download').addEventListener('click', () => {
   const link = document.createElement('a');
@@ -218,13 +216,7 @@ document.getElementById('lensing-download').addEventListener('click', () => {
 });
 
 document.getElementById('lensing-download-hd').addEventListener('click', () => {
-  const hd = document.createElement('canvas');
-  hd.width = 4096; hd.height = 4096;
-  renderLensing(hd, getLensingConfig());
-  const link = document.createElement('a');
-  link.download = 'spectral-lensing-4k.png';
-  link.href = hd.toDataURL('image/png');
-  link.click();
+  downloadHd(renderLensing, getLensingConfig, 'spectral-lensing-4k.png');
 });
 
 // --- Topographic controls ---
@@ -252,14 +244,7 @@ function updateTopo() {
     `Contours: ${result.contours} | Scale: ${result.scale}`;
 }
 
-document.querySelectorAll('#gen-topographic .controls input, #gen-topographic .controls select').forEach(el => {
-  const event = el.type === 'range' ? 'input' : 'change';
-  el.addEventListener(event, () => {
-    const valueEl = document.getElementById('v-' + el.id);
-    if (valueEl) valueEl.textContent = el.value;
-    scheduleTopo();
-  });
-});
+bindControls('topographic', 't', scheduleTopo);
 
 document.getElementById('topographic-download').addEventListener('click', () => {
   const link = document.createElement('a');
@@ -269,13 +254,7 @@ document.getElementById('topographic-download').addEventListener('click', () => 
 });
 
 document.getElementById('topographic-download-hd').addEventListener('click', () => {
-  const hd = document.createElement('canvas');
-  hd.width = 4096; hd.height = 4096;
-  renderTopographic(hd, getTopoConfig());
-  const link = document.createElement('a');
-  link.download = 'spectral-topographic-4k.png';
-  link.href = hd.toDataURL('image/png');
-  link.click();
+  downloadHd(renderTopographic, getTopoConfig, 'spectral-topographic-4k.png');
 });
 
 document.getElementById('topographic-randomize').addEventListener('click', () => {
@@ -312,14 +291,7 @@ function updateMoire() {
     `Pattern: ${result.pattern} | \u0394\u03B8: ${result.angleDiff}\u00B0 | Fringe freq: ${result.fringeFreq}`;
 }
 
-document.querySelectorAll('#gen-moire .controls input, #gen-moire .controls select').forEach(el => {
-  const event = el.type === 'range' ? 'input' : 'change';
-  el.addEventListener(event, () => {
-    const valueEl = document.getElementById('v-' + el.id);
-    if (valueEl) valueEl.textContent = el.value;
-    scheduleMoire();
-  });
-});
+bindControls('moire', 'm', scheduleMoire);
 
 document.getElementById('moire-download').addEventListener('click', () => {
   const link = document.createElement('a');
@@ -329,13 +301,7 @@ document.getElementById('moire-download').addEventListener('click', () => {
 });
 
 document.getElementById('moire-download-hd').addEventListener('click', () => {
-  const hd = document.createElement('canvas');
-  hd.width = 4096; hd.height = 4096;
-  renderMoire(hd, getMoireConfig());
-  const link = document.createElement('a');
-  link.download = 'spectral-moire-4k.png';
-  link.href = hd.toDataURL('image/png');
-  link.click();
+  downloadHd(renderMoire, getMoireConfig, 'spectral-moire-4k.png');
 });
 
 // --- Nebula controls ---
@@ -362,14 +328,7 @@ function updateNebula() {
     `Stars: ${result.stars} | Palette: ${result.palette}`;
 }
 
-document.querySelectorAll('#gen-nebula .controls input, #gen-nebula .controls select').forEach(el => {
-  const event = el.type === 'range' ? 'input' : 'change';
-  el.addEventListener(event, () => {
-    const valueEl = document.getElementById('v-' + el.id);
-    if (valueEl) valueEl.textContent = el.value;
-    scheduleNebula();
-  });
-});
+bindControls('nebula', 'n', scheduleNebula);
 
 document.getElementById('nebula-download').addEventListener('click', () => {
   const link = document.createElement('a');
@@ -379,13 +338,7 @@ document.getElementById('nebula-download').addEventListener('click', () => {
 });
 
 document.getElementById('nebula-download-hd').addEventListener('click', () => {
-  const hd = document.createElement('canvas');
-  hd.width = 4096; hd.height = 4096;
-  renderNebula(hd, getNebulaConfig());
-  const link = document.createElement('a');
-  link.download = 'spectral-nebula-4k.png';
-  link.href = hd.toDataURL('image/png');
-  link.click();
+  downloadHd(renderNebula, getNebulaConfig, 'spectral-nebula-4k.png');
 });
 
 document.getElementById('nebula-randomize').addEventListener('click', () => {
@@ -401,8 +354,7 @@ document.getElementById('nebula-randomize').addEventListener('click', () => {
   if (el) {
     const val = Math.floor(Math.random() * 9999) + 1;
     el.value = val;
-    const labelId = id === 'w-seed' ? 'v-seed' : 'v-' + id;
-    const label = document.getElementById(labelId);
+    const label = document.getElementById('v-' + id);
     if (label) label.textContent = val;
   }
 });

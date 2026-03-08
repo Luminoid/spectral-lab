@@ -2,12 +2,21 @@
 // Physics: Einstein's deflection α = θ_E² / θ, lens equation β = θ - θ_E²/θ
 // For each output pixel, trace backward through the lens to find the source pixel
 
-function seededRngLens(seed) {
-  return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
+// Cached upscale canvas — avoids creating a new canvas element per render
+let _lensingTmpCanvas = null;
+let _lensingTmpSize = 0;
+
+function getLensingTmpCanvas(size) {
+  if (!_lensingTmpCanvas || _lensingTmpSize !== size) {
+    _lensingTmpCanvas = document.createElement('canvas');
+    _lensingTmpCanvas.width = size;
+    _lensingTmpCanvas.height = size;
+    _lensingTmpSize = size;
+  }
+  return _lensingTmpCanvas;
 }
+
+// seededRng and hslToRgb provided by noise.js
 
 // --- Source galaxy: small elliptical blob with Sérsic-like profile ---
 function createSourceGalaxy(rng, cx, cy, size, hue, brightness) {
@@ -52,7 +61,7 @@ function renderLensing(canvas, config = {}) {
   } = config;
 
   const sc = W / 2048;
-  const rng = seededRngLens(seed);
+  const rng = seededRng(seed);
   const eR = einsteinRadius * sc * (mass / 50);
   const softening = 2 * sc; // prevent singularity at center
 
@@ -65,7 +74,7 @@ function renderLensing(canvas, config = {}) {
     (210 + colorShift) % 360, (ringBrightness / 100) * 1.2,
   ));
   // Additional background sources for richer field
-  const bgRng = seededRngLens(seed + 100);
+  const bgRng = seededRng(seed + 100);
   for (let i = 0; i < 5; i++) {
     const gx = (bgRng() - 0.5) * W * 0.6;
     const gy = (bgRng() - 0.5) * H * 0.6;
@@ -77,7 +86,7 @@ function renderLensing(canvas, config = {}) {
 
   // Background star field (in source plane)
   const bgStars = [];
-  const starRng = seededRngLens(seed + 200);
+  const starRng = seededRng(seed + 200);
   for (let i = 0; i < starCount; i++) {
     bgStars.push({
       x: (starRng() - 0.5) * W * 1.2,
@@ -179,8 +188,7 @@ function renderLensing(canvas, config = {}) {
     resData[pi + 2] = Math.min(255, (buf[bi + 2] + 0.015) * 255);
     resData[pi + 3] = 255;
   }
-  const tmp = document.createElement('canvas');
-  tmp.width = res; tmp.height = res;
+  const tmp = getLensingTmpCanvas(res);
   tmp.getContext('2d').putImageData(resImg, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -244,18 +252,3 @@ function renderLensing(canvas, config = {}) {
   return { einsteinRadius: Math.round(eR / sc), alignment };
 }
 
-// HSL to RGB [0-1]
-function hslToRgb(h, s, l) {
-  if (s === 0) return [l, l, l];
-  const hue2rgb = (p, q, t) => {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  };
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  return [hue2rgb(p, q, h + 1 / 3), hue2rgb(p, q, h), hue2rgb(p, q, h - 1 / 3)];
-}

@@ -3,90 +3,21 @@
 // Technique: ridged multi-fractal + domain warping for filamentary structure
 // Rendering: layered gas emission with dust absorption, ACES tone mapping
 
-function seededRngNebula(seed) {
-  return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
+// Cached upscale canvas — avoids creating a new canvas element per render
+let _nebulaTmpCanvas = null;
+let _nebulaTmpSize = 0;
+
+function getNebulaTmpCanvas(size) {
+  if (!_nebulaTmpCanvas || _nebulaTmpSize !== size) {
+    _nebulaTmpCanvas = document.createElement('canvas');
+    _nebulaTmpCanvas.width = size;
+    _nebulaTmpCanvas.height = size;
+    _nebulaTmpSize = size;
+  }
+  return _nebulaTmpCanvas;
 }
 
-function createNebulaNoise(seed) {
-  const rng = seededRngNebula(seed);
-  const size = 256;
-  const perm = new Uint8Array(size * 2);
-  for (let i = 0; i < size; i++) perm[i] = i;
-  for (let i = size - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const t = perm[i]; perm[i] = perm[j]; perm[j] = t;
-  }
-  for (let i = 0; i < size; i++) perm[size + i] = perm[i];
-
-  const gradX = new Float64Array(size);
-  const gradY = new Float64Array(size);
-  for (let i = 0; i < size; i++) {
-    const a = rng() * Math.PI * 2;
-    gradX[i] = Math.cos(a);
-    gradY[i] = Math.sin(a);
-  }
-
-  function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-
-  function noise2d(x, y) {
-    const xi = Math.floor(x) & (size - 1);
-    const yi = Math.floor(y) & (size - 1);
-    const xf = x - Math.floor(x);
-    const yf = y - Math.floor(y);
-    const u = fade(xf);
-    const v = fade(yf);
-    const aa = perm[perm[xi] + yi];
-    const ab = perm[perm[xi] + yi + 1];
-    const ba = perm[perm[xi + 1] + yi];
-    const bb = perm[perm[xi + 1] + yi + 1];
-    const g00 = gradX[aa] * xf + gradY[aa] * yf;
-    const g10 = gradX[ba] * (xf - 1) + gradY[ba] * yf;
-    const g01 = gradX[ab] * xf + gradY[ab] * (yf - 1);
-    const g11 = gradX[bb] * (xf - 1) + gradY[bb] * (yf - 1);
-    return (g00 + u * (g10 - g00)) + v * ((g01 + u * (g11 - g01)) - (g00 + u * (g10 - g00)));
-  }
-
-  function fbm(x, y, octaves, gain = 0.5) {
-    let val = 0, amp = 1, freq = 1, max = 0;
-    for (let o = 0; o < octaves; o++) {
-      val += amp * noise2d(x * freq, y * freq);
-      max += amp;
-      amp *= gain;
-      freq *= 2.0;
-    }
-    return val / max;
-  }
-
-  // Ridged multi-fractal — creates sharp ridges and filaments
-  function ridged(x, y, octaves, gain = 0.5) {
-    let val = 0, amp = 1, freq = 1, max = 0, prev = 1;
-    for (let o = 0; o < octaves; o++) {
-      let n = noise2d(x * freq, y * freq);
-      n = 1 - Math.abs(n); // fold to create ridges
-      n = n * n * prev;    // sharpen and weight by previous
-      val += amp * n;
-      max += amp;
-      prev = n;
-      amp *= gain;
-      freq *= 2.0;
-    }
-    return val / max;
-  }
-
-  // Domain warping for organic gas flow
-  function warped(x, y, octaves, gain, strength) {
-    const q0 = fbm(x + 0, y + 0, 3, gain);
-    const q1 = fbm(x + 5.2, y + 1.3, 3, gain);
-    const wx = x + strength * q0;
-    const wy = y + strength * q1;
-    return fbm(wx, wy, octaves, gain);
-  }
-
-  return { noise2d, fbm, ridged, warped };
-}
+// seededRng, createNoise, tempToRGB provided by noise.js
 
 // Palettes — scientifically calibrated emission line colors
 // Emission lines and their true wavelengths:
@@ -159,7 +90,7 @@ const NEBULA_PALETTES = {
   },
 };
 
-// Blackbody temperature to approximate RGB (Tanner Helland algorithm)
+// Star temperature sampling — uses shared tempToRGB from noise.js
 function starColor(rng) {
   const roll = rng();
   let temp;
@@ -170,14 +101,7 @@ function starColor(rng) {
   else if (roll < 0.50) temp = 3700 + rng() * 1500;    // K orange
   else temp = 2500 + rng() * 1200;                      // M red
 
-  const t = temp / 100;
-  let r, g, b;
-  if (t <= 66) r = 255; else r = Math.max(0, Math.min(255, 329.7 * Math.pow(t - 60, -0.1332)));
-  if (t <= 66) g = Math.max(0, Math.min(255, 99.47 * Math.log(t) - 161.12));
-  else g = Math.max(0, Math.min(255, 288.12 * Math.pow(t - 60, -0.0755)));
-  if (t >= 66) b = 255; else if (t <= 19) b = 0;
-  else b = Math.max(0, Math.min(255, 138.52 * Math.log(t - 10) - 305.04));
-
+  const [r, g, b] = tempToRGB(temp);
   return [r, g, b, temp];
 }
 
@@ -197,13 +121,13 @@ function renderNebula(canvas, config = {}) {
     seed = 42,
   } = config;
 
-  const rng = seededRngNebula(seed + 999);
+  const rng = seededRng(seed + 999);
   const pal = NEBULA_PALETTES[palette] || NEBULA_PALETTES.emission;
-  const noiseMain = createNebulaNoise(seed);
-  const noiseDetail = createNebulaNoise(seed + 137);
-  const noiseDust = createNebulaNoise(seed + 271);
+  const noiseMain = createNoise(seed);
+  const noiseDetail = createNoise(seed + 137);
+  const noiseDust = createNoise(seed + 271);
   // Per-species noise fields — each emission line has its own spatial distribution
-  const speciesNoises = pal.species.map((sp) => createNebulaNoise(seed + 500 + sp.offset));
+  const speciesNoises = pal.species.map((sp) => createNoise(seed + 500 + sp.offset));
   const contrastPow = 0.6 + (contrast / 100) * 0.8; // gamma curve for contrast
   const warpStr = 1.5 + turbulence * 0.25;
   const densityThresh = 1.05 - density / 100; // higher density = lower threshold
@@ -304,6 +228,7 @@ function renderNebula(canvas, config = {}) {
       const dustEmit = dustDensity * 0.03;
       r += (pal.dust[0] / 255) * dustEmit;
       g += (pal.dust[1] / 255) * dustEmit;
+      b += (pal.dust[2] / 255) * dustEmit;
 
       // Background bleed
       r += pal.bg[0] / 255 * 0.03;
@@ -338,8 +263,7 @@ function renderNebula(canvas, config = {}) {
   }
 
   // Upscale nebula to canvas
-  const tmp = document.createElement('canvas');
-  tmp.width = res; tmp.height = res;
+  const tmp = getNebulaTmpCanvas(res);
   tmp.getContext('2d').putImageData(imgData, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';

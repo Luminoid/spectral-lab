@@ -34,27 +34,27 @@
       </select>
     </div>
     <div class="control-group">
-      <label>Prism Angle <span class="value" id="v-prismAngle">60</span>&deg;</label>
+      <label>Prism Angle <span class="value" id="v-p-prismAngle">60</span>&deg;</label>
       <input type="range" id="p-prismAngle" min="30" max="120" value="60" step="1">
     </div>
     <div class="control-group">
-      <label>Incident Angle <span class="value" id="v-incidentAngle">49</span>&deg;</label>
+      <label>Incident Angle <span class="value" id="v-p-incidentAngle">49</span>&deg;</label>
       <input type="range" id="p-incidentAngle" min="10" max="85" value="49" step="1">
     </div>
     <div class="control-group">
-      <label>Rotation <span class="value" id="v-rotation">0</span>&deg;</label>
+      <label>Rotation <span class="value" id="v-p-rotation">0</span>&deg;</label>
       <input type="range" id="p-rotation" min="-180" max="180" value="0" step="1">
     </div>
     <div class="control-group">
-      <label>Spread Multiplier <span class="value" id="v-spread">10</span>x</label>
+      <label>Spread Multiplier <span class="value" id="v-p-spread">10</span>x</label>
       <input type="range" id="p-spread" min="1" max="30" value="10" step="1">
     </div>
     <div class="control-group">
-      <label>Prism Size <span class="value" id="v-prismScale">32</span>%</label>
+      <label>Prism Size <span class="value" id="v-p-prismScale">32</span>%</label>
       <input type="range" id="p-prismScale" min="15" max="50" value="32" step="1">
     </div>
     <div class="control-group">
-      <label>Beam Width <span class="value" id="v-beamWidth">22</span></label>
+      <label>Beam Width <span class="value" id="v-p-beamWidth">22</span></label>
       <input type="range" id="p-beamWidth" min="5" max="50" value="22" step="1">
     </div>
     <div class="control-group">
@@ -82,31 +82,31 @@
 <div class="generator" id="gen-waveform">
   <div class="controls">
     <div class="control-group">
-      <label>Lines <span class="value" id="v-lineCount">60</span></label>
+      <label>Lines <span class="value" id="v-w-lineCount">60</span></label>
       <input type="range" id="w-lineCount" min="10" max="120" value="60" step="1">
     </div>
     <div class="control-group">
-      <label>Amplitude <span class="value" id="v-amplitude">1.0</span></label>
+      <label>Amplitude <span class="value" id="v-w-amplitude">1.0</span></label>
       <input type="range" id="w-amplitude" min="0.1" max="3.0" value="1.0" step="0.1">
     </div>
     <div class="control-group">
-      <label>Noise <span class="value" id="v-noise">0.3</span></label>
+      <label>Noise <span class="value" id="v-w-noise">0.3</span></label>
       <input type="range" id="w-noise" min="0" max="1.0" value="0.3" step="0.05">
     </div>
     <div class="control-group">
-      <label>Peaks <span class="value" id="v-peakCount">3</span></label>
+      <label>Peaks <span class="value" id="v-w-peakCount">3</span></label>
       <input type="range" id="w-peakCount" min="1" max="8" value="3" step="1">
     </div>
     <div class="control-group">
-      <label>Peak Width <span class="value" id="v-peakWidth">0.05</span></label>
+      <label>Peak Width <span class="value" id="v-w-peakWidth">0.05</span></label>
       <input type="range" id="w-peakWidth" min="0.01" max="0.20" value="0.05" step="0.01">
     </div>
     <div class="control-group">
-      <label>Center Bias <span class="value" id="v-centerBias">0.6</span></label>
+      <label>Center Bias <span class="value" id="v-w-centerBias">0.6</span></label>
       <input type="range" id="w-centerBias" min="0.1" max="1.0" value="0.6" step="0.05">
     </div>
     <div class="control-group">
-      <label>Line Width <span class="value" id="v-lineWidth">1.5</span></label>
+      <label>Line Width <span class="value" id="v-w-lineWidth">1.5</span></label>
       <input type="range" id="w-lineWidth" min="0.5" max="4.0" value="1.5" step="0.5">
     </div>
     <div class="control-group">
@@ -120,7 +120,7 @@
       </label>
     </div>
     <div class="control-group">
-      <label>Seed <span class="value" id="v-seed">1979</span></label>
+      <label>Seed <span class="value" id="v-w-seed">1979</span></label>
       <input type="range" id="w-seed" min="1" max="9999" value="1979" step="1">
     </div>
     <div class="control-group">
@@ -399,6 +399,7 @@
   Spectral Lab &mdash; physics-based light refraction &amp; pulse profile visualization
 </footer>
 
+<script src="noise.js"></script>
 <script src="prism.js"></script>
 <script src="waveform.js"></script>
 <script src="lensing.js"></script>
