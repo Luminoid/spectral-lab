@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spectral Lab — Light & Signal Visualization</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <h1><span>Spectral</span> Lab</h1>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="prism">Prism Refraction</button>
+  <button class="tab-btn" data-tab="waveform">Pulse Profile</button>
+</div>
+
+<!-- ============ PRISM GENERATOR ============ -->
+<div class="generator active" id="gen-prism">
+  <div class="controls">
+    <div class="control-group">
+      <label>Glass Type</label>
+      <select id="p-glass">
+        <option value="bk7">BK7 Borosilicate (n 1.51-1.54)</option>
+        <option value="crown">Crown K9 (n 1.51-1.54)</option>
+        <option value="flint">Dense Flint SF11 (n 1.74-1.81)</option>
+        <option value="diamond">Diamond (n 2.41-2.45)</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Prism Angle <span class="value" id="v-prismAngle">60</span>&deg;</label>
+      <input type="range" id="p-prismAngle" min="30" max="120" value="60" step="1">
+    </div>
+    <div class="control-group">
+      <label>Incident Angle <span class="value" id="v-incidentAngle">49</span>&deg;</label>
+      <input type="range" id="p-incidentAngle" min="10" max="85" value="49" step="1">
+    </div>
+    <div class="control-group">
+      <label>Rotation <span class="value" id="v-rotation">0</span>&deg;</label>
+      <input type="range" id="p-rotation" min="-180" max="180" value="0" step="1">
+    </div>
+    <div class="control-group">
+      <label>Spread Multiplier <span class="value" id="v-spread">10</span>x</label>
+      <input type="range" id="p-spread" min="1" max="30" value="10" step="1">
+    </div>
+    <div class="control-group">
+      <label>Prism Size <span class="value" id="v-prismScale">32</span>%</label>
+      <input type="range" id="p-prismScale" min="15" max="50" value="32" step="1">
+    </div>
+    <div class="control-group">
+      <label>Beam Width <span class="value" id="v-beamWidth">22</span></label>
+      <input type="range" id="p-beamWidth" min="5" max="50" value="22" step="1">
+    </div>
+    <div class="control-group">
+      <label class="checkbox-row">
+        <input type="checkbox" id="p-stars" checked> Star field
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="p-bloom" checked> Bloom
+      </label>
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <canvas id="prism-canvas" width="2048" height="2048"></canvas>
+    </div>
+    <div class="info-bar" id="prism-info"></div>
+    <div class="btn-row">
+      <button class="btn" id="prism-download">Download PNG</button>
+      <button class="btn secondary" id="prism-download-hd">Download 4K</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ WAVEFORM GENERATOR ============ -->
+<div class="generator" id="gen-waveform">
+  <div class="controls">
+    <div class="control-group">
+      <label>Lines <span class="value" id="v-lineCount">60</span></label>
+      <input type="range" id="w-lineCount" min="10" max="120" value="60" step="1">
+    </div>
+    <div class="control-group">
+      <label>Amplitude <span class="value" id="v-amplitude">1.0</span></label>
+      <input type="range" id="w-amplitude" min="0.1" max="3.0" value="1.0" step="0.1">
+    </div>
+    <div class="control-group">
+      <label>Noise <span class="value" id="v-noise">0.3</span></label>
+      <input type="range" id="w-noise" min="0" max="1.0" value="0.3" step="0.05">
+    </div>
+    <div class="control-group">
+      <label>Peaks <span class="value" id="v-peakCount">3</span></label>
+      <input type="range" id="w-peakCount" min="1" max="8" value="3" step="1">
+    </div>
+    <div class="control-group">
+      <label>Peak Width <span class="value" id="v-peakWidth">0.05</span></label>
+      <input type="range" id="w-peakWidth" min="0.01" max="0.20" value="0.05" step="0.01">
+    </div>
+    <div class="control-group">
+      <label>Center Bias <span class="value" id="v-centerBias">0.6</span></label>
+      <input type="range" id="w-centerBias" min="0.1" max="1.0" value="0.6" step="0.05">
+    </div>
+    <div class="control-group">
+      <label>Line Width <span class="value" id="v-lineWidth">1.5</span></label>
+      <input type="range" id="w-lineWidth" min="0.5" max="4.0" value="1.5" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Stroke Color
+        <input type="color" id="w-strokeColor" value="#ffffff">
+      </label>
+    </div>
+    <div class="control-group">
+      <label>Background
+        <input type="color" id="w-bgColor" value="#000000">
+      </label>
+    </div>
+    <div class="control-group">
+      <label>Seed <span class="value" id="v-seed">1979</span></label>
+      <input type="range" id="w-seed" min="1" max="9999" value="1979" step="1">
+    </div>
+    <div class="control-group">
+      <label class="checkbox-row">
+        <input type="checkbox" id="w-fillBelow" checked> Mountain fill
+      </label>
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <canvas id="waveform-canvas" width="2048" height="2048"></canvas>
+    </div>
+    <div class="info-bar" id="waveform-info"></div>
+    <div class="btn-row">
+      <button class="btn" id="waveform-download">Download PNG</button>
+      <button class="btn secondary" id="waveform-download-hd">Download 4K</button>
+      <button class="btn secondary" id="waveform-randomize">Randomize</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Spectral Lab &mdash; physics-based light refraction &amp; pulse profile visualization
+</footer>
+
+<script src="prism.js"></script>
+<script src="waveform.js"></script>
+<script>
+  // --- RAF debounce — prevents redundant renders during slider drag ---
+  let _prismRaf = 0;
+  let _waveRaf = 0;
+
+  function schedulePrism() {
+    cancelAnimationFrame(_prismRaf);
+    _prismRaf = requestAnimationFrame(updatePrism);
+  }
+
+  function scheduleWaveform() {
+    cancelAnimationFrame(_waveRaf);
+    _waveRaf = requestAnimationFrame(updateWaveform);
+  }
+
+  // --- Tab switching ---
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.generator').forEach(g => g.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('gen-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // --- Prism controls ---
+  const prismCanvas = document.getElementById('prism-canvas');
+  const prismInfo = document.getElementById('prism-info');
+
+  function getPrismConfig() {
+    return {
+      glassType: document.getElementById('p-glass').value,
+      prismAngle: +document.getElementById('p-prismAngle').value,
+      incidentAngle: +document.getElementById('p-incidentAngle').value,
+      rotation: +document.getElementById('p-rotation').value,
+      spread: +document.getElementById('p-spread').value,
+      prismScale: +document.getElementById('p-prismScale').value / 100,
+      beamWidth: +document.getElementById('p-beamWidth').value,
+      showStars: document.getElementById('p-stars').checked,
+      showBloom: document.getElementById('p-bloom').checked,
+    };
+  }
+
+  function updatePrism() {
+    const config = getPrismConfig();
+    const result = renderPrism(prismCanvas, config);
+    if (result.tir) {
+      prismInfo.innerHTML = '<span class="tir-warning">Total internal reflection — light cannot exit at these angles</span>';
+    } else {
+      prismInfo.textContent =
+        `Deviation: ${result.deviation}\u00B0 | ` +
+        `Beam: ${result.beamDirection}\u00B0 | ` +
+        `Exit: ${result.exitDirection}\u00B0`;
+    }
+  }
+
+  // Bind all prism controls
+  document.querySelectorAll('#gen-prism .controls input, #gen-prism .controls select').forEach(el => {
+    const event = el.type === 'range' ? 'input' : 'change';
+    el.addEventListener(event, () => {
+      const valueEl = document.getElementById('v-' + el.id.replace('p-', ''));
+      if (valueEl) valueEl.textContent = el.value;
+      schedulePrism();
+    });
+  });
+
+  // Download
+  document.getElementById('prism-download').addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'spectral-prism.png';
+    link.href = prismCanvas.toDataURL('image/png');
+    link.click();
+  });
+
+  document.getElementById('prism-download-hd').addEventListener('click', () => {
+    const hd = document.createElement('canvas');
+    hd.width = 4096; hd.height = 4096;
+    renderPrism(hd, getPrismConfig());
+    const link = document.createElement('a');
+    link.download = 'spectral-prism-4k.png';
+    link.href = hd.toDataURL('image/png');
+    link.click();
+  });
+
+  // --- Waveform controls ---
+  const waveCanvas = document.getElementById('waveform-canvas');
+
+  function getWaveConfig() {
+    return {
+      lineCount: +document.getElementById('w-lineCount').value,
+      amplitude: +document.getElementById('w-amplitude').value,
+      noise: +document.getElementById('w-noise').value,
+      peakCount: +document.getElementById('w-peakCount').value,
+      peakWidth: +document.getElementById('w-peakWidth').value,
+      centerBias: +document.getElementById('w-centerBias').value,
+      lineWidth: +document.getElementById('w-lineWidth').value,
+      strokeColor: document.getElementById('w-strokeColor').value,
+      backgroundColor: document.getElementById('w-bgColor').value,
+      seed: +document.getElementById('w-seed').value,
+      fillBelow: document.getElementById('w-fillBelow').checked,
+    };
+  }
+
+  function updateWaveform() {
+    renderWaveform(waveCanvas, getWaveConfig());
+  }
+
+  document.querySelectorAll('#gen-waveform .controls input').forEach(el => {
+    const event = (el.type === 'range') ? 'input' : 'change';
+    el.addEventListener(event, () => {
+      const valueEl = document.getElementById('v-' + el.id.replace('w-', ''));
+      if (valueEl) valueEl.textContent = el.value;
+      scheduleWaveform();
+    });
+  });
+
+  document.getElementById('waveform-download').addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'spectral-waveform.png';
+    link.href = waveCanvas.toDataURL('image/png');
+    link.click();
+  });
+
+  document.getElementById('waveform-download-hd').addEventListener('click', () => {
+    const hd = document.createElement('canvas');
+    hd.width = 4096; hd.height = 4096;
+    renderWaveform(hd, getWaveConfig());
+    const link = document.createElement('a');
+    link.download = 'spectral-waveform-4k.png';
+    link.href = hd.toDataURL('image/png');
+    link.click();
+  });
+
+  document.getElementById('waveform-randomize').addEventListener('click', () => {
+    const seedInput = document.getElementById('w-seed');
+    seedInput.value = Math.floor(Math.random() * 9999) + 1;
+    document.getElementById('v-seed').textContent = seedInput.value;
+    scheduleWaveform();
+  });
+
+  // --- Initial render ---
+  updatePrism();
+  updateWaveform();
+</script>
+
+</body>
+</html>
