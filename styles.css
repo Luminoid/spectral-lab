@@ -52,6 +52,10 @@ header h1 span {
   display: flex;
   gap: 4px;
   padding: 12px 24px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 .tab-btn {
@@ -64,6 +68,8 @@ header h1 span {
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab-btn:hover {

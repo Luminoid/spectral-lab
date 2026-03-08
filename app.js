@@ -1,6 +1,10 @@
 // --- RAF debounce — prevents redundant renders during slider drag ---
 let _prismRaf = 0;
 let _waveRaf = 0;
+let _lensingRaf = 0;
+let _topoRaf = 0;
+let _moireRaf = 0;
+let _nebulaRaf = 0;
 
 function schedulePrism() {
   cancelAnimationFrame(_prismRaf);
@@ -12,13 +16,48 @@ function scheduleWaveform() {
   _waveRaf = requestAnimationFrame(updateWaveform);
 }
 
+function scheduleLensing() {
+  cancelAnimationFrame(_lensingRaf);
+  _lensingRaf = requestAnimationFrame(updateLensing);
+}
+
+function scheduleTopo() {
+  cancelAnimationFrame(_topoRaf);
+  _topoRaf = requestAnimationFrame(updateTopo);
+}
+
+function scheduleMoire() {
+  cancelAnimationFrame(_moireRaf);
+  _moireRaf = requestAnimationFrame(updateMoire);
+}
+
+function scheduleNebula() {
+  cancelAnimationFrame(_nebulaRaf);
+  _nebulaRaf = requestAnimationFrame(updateNebula);
+}
+
 // --- Tab switching ---
+let activeTab = 'prism';
+const initialRenders = { prism: true, waveform: true };
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.generator').forEach(g => g.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('gen-' + btn.dataset.tab).classList.add('active');
+    activeTab = btn.dataset.tab;
+    document.getElementById('gen-' + activeTab).classList.add('active');
+    // Lazy render on first visit
+    if (!initialRenders[activeTab]) {
+      initialRenders[activeTab] = true;
+      const renderMap = {
+        lensing: updateLensing,
+        topographic: updateTopo,
+        moire: updateMoire,
+        nebula: updateNebula,
+      };
+      if (renderMap[activeTab]) renderMap[activeTab]();
+    }
   });
 });
 
@@ -135,6 +174,237 @@ document.getElementById('waveform-randomize').addEventListener('click', () => {
   seedInput.value = Math.floor(Math.random() * 9999) + 1;
   document.getElementById('v-seed').textContent = seedInput.value;
   scheduleWaveform();
+});
+
+// --- Gravitational Lensing controls ---
+const lensingCanvas = document.getElementById('lensing-canvas');
+const lensingInfo = document.getElementById('lensing-info');
+
+function getLensingConfig() {
+  return {
+    mass: +document.getElementById('l-mass').value,
+    sourceX: +document.getElementById('l-sourceX').value,
+    sourceY: +document.getElementById('l-sourceY').value,
+    sourceSize: +document.getElementById('l-sourceSize').value,
+    einsteinRadius: +document.getElementById('l-einsteinRadius').value,
+    ringBrightness: +document.getElementById('l-ringBrightness').value,
+    distortion: +document.getElementById('l-distortion').value,
+    colorShift: +document.getElementById('l-colorShift').value,
+    starCount: +document.getElementById('l-starCount').value,
+    showGrid: document.getElementById('l-showGrid').checked,
+  };
+}
+
+function updateLensing() {
+  const result = renderLensing(lensingCanvas, getLensingConfig());
+  lensingInfo.textContent =
+    `Einstein radius: ${result.einsteinRadius} | Alignment: ${result.alignment}%`;
+}
+
+document.querySelectorAll('#gen-lensing .controls input, #gen-lensing .controls select').forEach(el => {
+  const event = el.type === 'range' ? 'input' : 'change';
+  el.addEventListener(event, () => {
+    const valueEl = document.getElementById('v-' + el.id);
+    if (valueEl) valueEl.textContent = el.value;
+    scheduleLensing();
+  });
+});
+
+document.getElementById('lensing-download').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'spectral-lensing.png';
+  link.href = lensingCanvas.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('lensing-download-hd').addEventListener('click', () => {
+  const hd = document.createElement('canvas');
+  hd.width = 4096; hd.height = 4096;
+  renderLensing(hd, getLensingConfig());
+  const link = document.createElement('a');
+  link.download = 'spectral-lensing-4k.png';
+  link.href = hd.toDataURL('image/png');
+  link.click();
+});
+
+// --- Topographic controls ---
+const topoCanvas = document.getElementById('topographic-canvas');
+const topoInfo = document.getElementById('topographic-info');
+
+function getTopoConfig() {
+  return {
+    contourCount: +document.getElementById('t-contourCount').value,
+    lineWidth: +document.getElementById('t-lineWidth').value,
+    palette: document.getElementById('t-palette').value,
+    scale: +document.getElementById('t-scale').value,
+    offsetX: +document.getElementById('t-offsetX').value,
+    offsetY: +document.getElementById('t-offsetY').value,
+    octaves: +document.getElementById('t-octaves').value,
+    fillBands: document.getElementById('t-fillBands').checked,
+    showLines: document.getElementById('t-showLines').checked,
+    seed: +document.getElementById('t-seed').value,
+  };
+}
+
+function updateTopo() {
+  const result = renderTopographic(topoCanvas, getTopoConfig());
+  topoInfo.textContent =
+    `Contours: ${result.contours} | Scale: ${result.scale}`;
+}
+
+document.querySelectorAll('#gen-topographic .controls input, #gen-topographic .controls select').forEach(el => {
+  const event = el.type === 'range' ? 'input' : 'change';
+  el.addEventListener(event, () => {
+    const valueEl = document.getElementById('v-' + el.id);
+    if (valueEl) valueEl.textContent = el.value;
+    scheduleTopo();
+  });
+});
+
+document.getElementById('topographic-download').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'spectral-topographic.png';
+  link.href = topoCanvas.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('topographic-download-hd').addEventListener('click', () => {
+  const hd = document.createElement('canvas');
+  hd.width = 4096; hd.height = 4096;
+  renderTopographic(hd, getTopoConfig());
+  const link = document.createElement('a');
+  link.download = 'spectral-topographic-4k.png';
+  link.href = hd.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('topographic-randomize').addEventListener('click', () => {
+  const seedInput = document.getElementById('t-seed');
+  seedInput.value = Math.floor(Math.random() * 9999) + 1;
+  document.getElementById('v-t-seed').textContent = seedInput.value;
+  scheduleTopo();
+});
+
+// --- Moiré Pattern controls ---
+const moireCanvas = document.getElementById('moire-canvas');
+const moireInfo = document.getElementById('moire-info');
+
+function getMoireConfig() {
+  return {
+    pattern: document.getElementById('m-pattern').value,
+    blendMode: document.getElementById('m-blendMode').value,
+    frequency: +document.getElementById('m-frequency').value,
+    rotation1: +document.getElementById('m-rotation1').value,
+    rotation2: +document.getElementById('m-rotation2').value,
+    offsetX: +document.getElementById('m-offsetX').value,
+    offsetY: +document.getElementById('m-offsetY').value,
+    amplitude: +document.getElementById('m-amplitude').value,
+    scale2: +document.getElementById('m-scale2').value,
+    color1: document.getElementById('m-color1').value,
+    color2: document.getElementById('m-color2').value,
+    backgroundColor: document.getElementById('m-bgColor').value,
+  };
+}
+
+function updateMoire() {
+  const result = renderMoire(moireCanvas, getMoireConfig());
+  moireInfo.textContent =
+    `Pattern: ${result.pattern} | \u0394\u03B8: ${result.angleDiff}\u00B0 | Fringe freq: ${result.fringeFreq}`;
+}
+
+document.querySelectorAll('#gen-moire .controls input, #gen-moire .controls select').forEach(el => {
+  const event = el.type === 'range' ? 'input' : 'change';
+  el.addEventListener(event, () => {
+    const valueEl = document.getElementById('v-' + el.id);
+    if (valueEl) valueEl.textContent = el.value;
+    scheduleMoire();
+  });
+});
+
+document.getElementById('moire-download').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'spectral-moire.png';
+  link.href = moireCanvas.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('moire-download-hd').addEventListener('click', () => {
+  const hd = document.createElement('canvas');
+  hd.width = 4096; hd.height = 4096;
+  renderMoire(hd, getMoireConfig());
+  const link = document.createElement('a');
+  link.download = 'spectral-moire-4k.png';
+  link.href = hd.toDataURL('image/png');
+  link.click();
+});
+
+// --- Nebula controls ---
+const nebulaCanvas = document.getElementById('nebula-canvas');
+const nebulaInfo = document.getElementById('nebula-info');
+
+function getNebulaConfig() {
+  return {
+    scale: +document.getElementById('n-scale').value,
+    density: +document.getElementById('n-density').value,
+    turbulence: +document.getElementById('n-turbulence').value,
+    starCount: +document.getElementById('n-starCount').value,
+    starBrightness: +document.getElementById('n-starBrightness').value,
+    palette: document.getElementById('n-palette').value,
+    hueShift: +document.getElementById('n-hueShift').value,
+    contrast: +document.getElementById('n-contrast').value,
+    seed: +document.getElementById('n-seed').value,
+  };
+}
+
+function updateNebula() {
+  const result = renderNebula(nebulaCanvas, getNebulaConfig());
+  nebulaInfo.textContent =
+    `Stars: ${result.stars} | Palette: ${result.palette}`;
+}
+
+document.querySelectorAll('#gen-nebula .controls input, #gen-nebula .controls select').forEach(el => {
+  const event = el.type === 'range' ? 'input' : 'change';
+  el.addEventListener(event, () => {
+    const valueEl = document.getElementById('v-' + el.id);
+    if (valueEl) valueEl.textContent = el.value;
+    scheduleNebula();
+  });
+});
+
+document.getElementById('nebula-download').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'spectral-nebula.png';
+  link.href = nebulaCanvas.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('nebula-download-hd').addEventListener('click', () => {
+  const hd = document.createElement('canvas');
+  hd.width = 4096; hd.height = 4096;
+  renderNebula(hd, getNebulaConfig());
+  const link = document.createElement('a');
+  link.download = 'spectral-nebula-4k.png';
+  link.href = hd.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('nebula-randomize').addEventListener('click', () => {
+  const seedInput = document.getElementById('n-seed');
+  seedInput.value = Math.floor(Math.random() * 9999) + 1;
+  document.getElementById('v-n-seed').textContent = seedInput.value;
+  scheduleNebula();
+});
+
+// --- Randomize seeds on page load ---
+['w-seed', 't-seed', 'n-seed'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    const val = Math.floor(Math.random() * 9999) + 1;
+    el.value = val;
+    const labelId = id === 'w-seed' ? 'v-seed' : 'v-' + id;
+    const label = document.getElementById(labelId);
+    if (label) label.textContent = val;
+  }
 });
 
 // --- Initial render ---

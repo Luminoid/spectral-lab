@@ -15,6 +15,10 @@
 <div class="tabs">
   <button class="tab-btn active" data-tab="prism">Prism Refraction</button>
   <button class="tab-btn" data-tab="waveform">Pulse Profile</button>
+  <button class="tab-btn" data-tab="lensing">Gravitational Lensing</button>
+  <button class="tab-btn" data-tab="nebula">Nebula</button>
+  <button class="tab-btn" data-tab="topographic">Topographic</button>
+  <button class="tab-btn" data-tab="moire">Moir&eacute; Pattern</button>
 </div>
 
 <!-- ============ PRISM GENERATOR ============ -->
@@ -138,12 +142,269 @@
   </div>
 </div>
 
+<!-- ============ GRAVITATIONAL LENSING GENERATOR ============ -->
+<div class="generator" id="gen-lensing">
+  <div class="controls">
+    <div class="control-group">
+      <label>Mass <span class="value" id="v-l-mass">80</span></label>
+      <input type="range" id="l-mass" min="10" max="100" value="80" step="1">
+    </div>
+    <div class="control-group">
+      <label>Source X <span class="value" id="v-l-sourceX">30</span></label>
+      <input type="range" id="l-sourceX" min="-300" max="300" value="30" step="5">
+    </div>
+    <div class="control-group">
+      <label>Source Y <span class="value" id="v-l-sourceY">-20</span></label>
+      <input type="range" id="l-sourceY" min="-300" max="300" value="-20" step="5">
+    </div>
+    <div class="control-group">
+      <label>Source Size <span class="value" id="v-l-sourceSize">30</span></label>
+      <input type="range" id="l-sourceSize" min="5" max="80" value="30" step="1">
+    </div>
+    <div class="control-group">
+      <label>Einstein Radius <span class="value" id="v-l-einsteinRadius">200</span></label>
+      <input type="range" id="l-einsteinRadius" min="50" max="500" value="200" step="10">
+    </div>
+    <div class="control-group">
+      <label>Ring Brightness <span class="value" id="v-l-ringBrightness">80</span>%</label>
+      <input type="range" id="l-ringBrightness" min="10" max="100" value="80" step="5">
+    </div>
+    <div class="control-group">
+      <label>Distortion <span class="value" id="v-l-distortion">1.0</span></label>
+      <input type="range" id="l-distortion" min="0.1" max="3.0" value="1.0" step="0.1">
+    </div>
+    <div class="control-group">
+      <label>Color Shift <span class="value" id="v-l-colorShift">0</span>&deg;</label>
+      <input type="range" id="l-colorShift" min="0" max="360" value="0" step="5">
+    </div>
+    <div class="control-group">
+      <label>Stars <span class="value" id="v-l-starCount">300</span></label>
+      <input type="range" id="l-starCount" min="50" max="800" value="300" step="10">
+    </div>
+    <div class="control-group">
+      <label class="checkbox-row">
+        <input type="checkbox" id="l-showGrid"> Distortion grid
+      </label>
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <canvas id="lensing-canvas" width="2048" height="2048"></canvas>
+    </div>
+    <div class="info-bar" id="lensing-info"></div>
+    <div class="btn-row">
+      <button class="btn" id="lensing-download">Download PNG</button>
+      <button class="btn secondary" id="lensing-download-hd">Download 4K</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ NEBULA GENERATOR ============ -->
+<div class="generator" id="gen-nebula">
+  <div class="controls">
+    <div class="control-group">
+      <label>Palette</label>
+      <select id="n-palette">
+        <option value="emission">Emission (True Color)</option>
+        <option value="hubble">Hubble SHO</option>
+        <option value="reflection">Reflection</option>
+        <option value="planetary">Planetary</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Scale <span class="value" id="v-n-scale">3.0</span></label>
+      <input type="range" id="n-scale" min="1.0" max="8.0" value="3.0" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Density <span class="value" id="v-n-density">60</span>%</label>
+      <input type="range" id="n-density" min="10" max="100" value="60" step="5">
+    </div>
+    <div class="control-group">
+      <label>Turbulence <span class="value" id="v-n-turbulence">6</span></label>
+      <input type="range" id="n-turbulence" min="2" max="8" value="6" step="1">
+    </div>
+    <div class="control-group">
+      <label>Stars <span class="value" id="v-n-starCount">500</span></label>
+      <input type="range" id="n-starCount" min="50" max="1500" value="500" step="50">
+    </div>
+    <div class="control-group">
+      <label>Star Brightness <span class="value" id="v-n-starBrightness">80</span>%</label>
+      <input type="range" id="n-starBrightness" min="10" max="100" value="80" step="5">
+    </div>
+    <div class="control-group">
+      <label>Hue Shift <span class="value" id="v-n-hueShift">0</span>&deg;</label>
+      <input type="range" id="n-hueShift" min="0" max="360" value="0" step="5">
+    </div>
+    <div class="control-group">
+      <label>Contrast <span class="value" id="v-n-contrast">50</span></label>
+      <input type="range" id="n-contrast" min="10" max="90" value="50" step="5">
+    </div>
+    <div class="control-group">
+      <label>Seed <span class="value" id="v-n-seed">42</span></label>
+      <input type="range" id="n-seed" min="1" max="9999" value="42" step="1">
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <canvas id="nebula-canvas" width="2048" height="2048"></canvas>
+    </div>
+    <div class="info-bar" id="nebula-info"></div>
+    <div class="btn-row">
+      <button class="btn" id="nebula-download">Download PNG</button>
+      <button class="btn secondary" id="nebula-download-hd">Download 4K</button>
+      <button class="btn secondary" id="nebula-randomize">Randomize</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOPOGRAPHIC GENERATOR ============ -->
+<div class="generator" id="gen-topographic">
+  <div class="controls">
+    <div class="control-group">
+      <label>Palette</label>
+      <select id="t-palette">
+        <option value="swiss">Swiss</option>
+        <option value="ocean">Ocean</option>
+        <option value="earth">Earth</option>
+        <option value="mono">Mono</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Contours <span class="value" id="v-t-contourCount">20</span></label>
+      <input type="range" id="t-contourCount" min="5" max="50" value="20" step="1">
+    </div>
+    <div class="control-group">
+      <label>Scale <span class="value" id="v-t-scale">3.0</span></label>
+      <input type="range" id="t-scale" min="1.0" max="8.0" value="3.0" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Offset X <span class="value" id="v-t-offsetX">0</span></label>
+      <input type="range" id="t-offsetX" min="-10" max="10" value="0" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Offset Y <span class="value" id="v-t-offsetY">0</span></label>
+      <input type="range" id="t-offsetY" min="-10" max="10" value="0" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Octaves <span class="value" id="v-t-octaves">5</span></label>
+      <input type="range" id="t-octaves" min="1" max="8" value="5" step="1">
+    </div>
+    <div class="control-group">
+      <label>Line Width <span class="value" id="v-t-lineWidth">1.5</span></label>
+      <input type="range" id="t-lineWidth" min="0.5" max="4.0" value="1.5" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Seed <span class="value" id="v-t-seed">42</span></label>
+      <input type="range" id="t-seed" min="1" max="9999" value="42" step="1">
+    </div>
+    <div class="control-group">
+      <label class="checkbox-row">
+        <input type="checkbox" id="t-fillBands" checked> Color fill
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="t-showLines" checked> Contour lines
+      </label>
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <canvas id="topographic-canvas" width="2048" height="2048"></canvas>
+    </div>
+    <div class="info-bar" id="topographic-info"></div>
+    <div class="btn-row">
+      <button class="btn" id="topographic-download">Download PNG</button>
+      <button class="btn secondary" id="topographic-download-hd">Download 4K</button>
+      <button class="btn secondary" id="topographic-randomize">Randomize</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MOIRÉ PATTERN GENERATOR ============ -->
+<div class="generator" id="gen-moire">
+  <div class="controls">
+    <div class="control-group">
+      <label>Pattern</label>
+      <select id="m-pattern">
+        <option value="lines">Lines</option>
+        <option value="circles">Circles</option>
+        <option value="dots">Dots</option>
+        <option value="radial">Radial</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Blend Mode</label>
+      <select id="m-blendMode">
+        <option value="multiply">Multiply</option>
+        <option value="screen">Screen</option>
+        <option value="difference">Difference</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Frequency <span class="value" id="v-m-frequency">30</span></label>
+      <input type="range" id="m-frequency" min="5" max="80" value="30" step="1">
+    </div>
+    <div class="control-group">
+      <label>Rotation 1 <span class="value" id="v-m-rotation1">0</span>&deg;</label>
+      <input type="range" id="m-rotation1" min="0" max="180" value="0" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Rotation 2 <span class="value" id="v-m-rotation2">5</span>&deg;</label>
+      <input type="range" id="m-rotation2" min="0" max="180" value="5" step="0.5">
+    </div>
+    <div class="control-group">
+      <label>Offset X <span class="value" id="v-m-offsetX">0</span></label>
+      <input type="range" id="m-offsetX" min="-200" max="200" value="0" step="5">
+    </div>
+    <div class="control-group">
+      <label>Offset Y <span class="value" id="v-m-offsetY">0</span></label>
+      <input type="range" id="m-offsetY" min="-200" max="200" value="0" step="5">
+    </div>
+    <div class="control-group">
+      <label>Amplitude <span class="value" id="v-m-amplitude">1.0</span></label>
+      <input type="range" id="m-amplitude" min="0.2" max="1.0" value="1.0" step="0.05">
+    </div>
+    <div class="control-group">
+      <label>Layer 2 Scale <span class="value" id="v-m-scale2">100</span>%</label>
+      <input type="range" id="m-scale2" min="80" max="120" value="100" step="1">
+    </div>
+    <div class="control-group">
+      <label>Color 1
+        <input type="color" id="m-color1" value="#ffffff">
+      </label>
+    </div>
+    <div class="control-group">
+      <label>Color 2
+        <input type="color" id="m-color2" value="#ffffff">
+      </label>
+    </div>
+    <div class="control-group">
+      <label>Background
+        <input type="color" id="m-bgColor" value="#000000">
+      </label>
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <canvas id="moire-canvas" width="2048" height="2048"></canvas>
+    </div>
+    <div class="info-bar" id="moire-info"></div>
+    <div class="btn-row">
+      <button class="btn" id="moire-download">Download PNG</button>
+      <button class="btn secondary" id="moire-download-hd">Download 4K</button>
+    </div>
+  </div>
+</div>
+
 <footer>
   Spectral Lab &mdash; physics-based light refraction &amp; pulse profile visualization
 </footer>
 
 <script src="prism.js"></script>
 <script src="waveform.js"></script>
+<script src="lensing.js"></script>
+<script src="topographic.js"></script>
+<script src="moire.js"></script>
+<script src="nebula.js"></script>
 <script src="app.js"></script>
 
 </body>
