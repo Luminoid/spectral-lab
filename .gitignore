@@ -5,3 +5,4 @@ Thumbs.db
 *~
 .wrangler/
 node_modules/
+.local/

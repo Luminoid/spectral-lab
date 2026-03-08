@@ -112,6 +112,7 @@ spectral-lab/
   moire.js        # Moiré pattern renderer
   noise.js        # Shared utilities (PRNG, Perlin noise, color conversions)
   styles.css      # Dark theme styling
+  icons/          # Favicons and touch icons
   _headers        # Cloudflare Pages security headers
   LICENSE         # CC BY-NC 4.0
 ```
