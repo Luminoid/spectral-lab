@@ -231,19 +231,19 @@ function getBloomCanvas(W, H) {
 // Computes distance between adjacent rays at a given fraction along their paths
 // For edge rays, uses single neighbor; for interior rays, averages both neighbors
 
-function interRaySpacing(rayPosAt, bandCount, i, frac, fallbackWidth) {
+function interRaySpacing(rayPosAt, bandCount, i, pos, fallbackWidth) {
   if (bandCount < 2) return fallbackWidth;
-  const [mx, my] = rayPosAt(i, frac);
+  const [mx, my] = rayPosAt(i, pos);
   if (i === 0) {
-    const [nx, ny] = rayPosAt(1, frac);
+    const [nx, ny] = rayPosAt(1, pos);
     return Math.hypot(nx - mx, ny - my);
   }
   if (i === bandCount - 1) {
-    const [px, py] = rayPosAt(i - 1, frac);
+    const [px, py] = rayPosAt(i - 1, pos);
     return Math.hypot(mx - px, my - py);
   }
-  const [px, py] = rayPosAt(i - 1, frac);
-  const [nx, ny] = rayPosAt(i + 1, frac);
+  const [px, py] = rayPosAt(i - 1, pos);
+  const [nx, ny] = rayPosAt(i + 1, pos);
   return (Math.hypot(mx - px, my - py) + Math.hypot(nx - mx, ny - my)) / 2;
 }
 
@@ -327,13 +327,13 @@ function drawExitBands(
     interDist.push(dists);
   }
 
+  ctx.lineCap = "butt";
   for (let i = 0; i < bandCount; i++) {
     const { xs, ys } = rays[i];
     const [r, g, b] = bands[i].color;
     ctx.strokeStyle = `rgb(${r},${g},${b})`;
 
     for (const [wMul, baseAlpha] of layerDefs) {
-      ctx.lineCap = "butt";
       for (let s = 0; s < segments; s++) {
         const frac = s / segments;
         const segWidth = interDist[i][s] * wMul;
@@ -492,6 +492,7 @@ function drawInternalRays(ctx, verts, bands, glowSpan, rayPaths) {
   ctx.lineTo(verts[2][0], verts[2][1]);
   ctx.closePath();
   ctx.clip();
+  ctx.lineCap = "butt";
 
   for (let i = 0; i < bandCount; i++) {
     const start = entryPts[i];
@@ -500,7 +501,6 @@ function drawInternalRays(ctx, verts, bands, glowSpan, rayPaths) {
     ctx.strokeStyle = `rgb(${r},${g},${b})`;
 
     for (const [wMul, a] of layerDefs) {
-      ctx.lineCap = "butt";
       ctx.globalAlpha = a;
       for (let s = 0; s < segCount; s++) {
         const frac = s / segCount;

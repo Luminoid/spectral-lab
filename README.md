@@ -18,10 +18,10 @@ Interactive physics-based light and signal visualization tool. Six generators:
 
 ### Prism Refraction
 
-- Sellmeier dispersion equation (`n²(λ) = 1 + Σ Bᵢλ²/(λ²-Cᵢ)`) with Schott datasheet coefficients
-- 4 glass presets: BK7 Borosilicate, Fused Silica, Dense Flint SF11, Diamond
+- Sellmeier dispersion equation (`n²(λ) = 1 + Σ Bᵢλ²/(λ²-Cᵢ)`) with published coefficients
+- 4 glass presets (by refractive index): Fused Silica, BK7 Borosilicate, Dense Flint SF11, Diamond
 - Snell's law refraction at both faces with total internal reflection detection
-- Configurable spectral bands: 6 (ROYGBV), 7 (ROYGBIV), 13 (Fine), 19 (Continuous)
+- Configurable spectral bands: 6 (ROYGBV), 7 (ROYGBIV), 13 (Fine), 25 (Continuous)
 - Geometric entry/exit points via `rayIntersect` + `softCompress` (tanh mapping to central 60%)
 - Configurable prism angle, incident angle, rotation, spread, size, beam width
 - Glow span control for ray softness
@@ -94,7 +94,7 @@ Interactive physics-based light and signal visualization tool. Six generators:
 All calculations use real physics:
 
 - **Snell's law**: `n1 sin(theta1) = n2 sin(theta2)` with TIR detection
-- **Sellmeier dispersion**: `n²(λ) = 1 + Σ Bᵢλ²/(λ² - Cᵢ)` — Schott datasheets, 25% nonlinearity blended with 75% linear
+- **Sellmeier dispersion**: `n²(λ) = 1 + Σ Bᵢλ²/(λ² - Cᵢ)` — Schott (BK7, SF11), Malitson 1965 (silica), Peter 1923 (diamond), 25% nonlinearity blended with 75% linear
 - **Prism deviation**: `delta = theta_i + theta_e - A`
 - **Dispersion**: Shorter wavelengths refract more (violet > red) — spread artistically exaggerated for visibility
 - **Gravitational lensing**: Einstein's deflection α = θ_E² / θ, lens equation β = θ - θ_E²/θ
