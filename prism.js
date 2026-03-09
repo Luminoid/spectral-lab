@@ -43,49 +43,103 @@ function lerpPt(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
 
-function raySegmentIntersect(origin, dir, segA, segB) {
-  // Find where ray (origin + t*dir) intersects segment segA→segB
+// Ray-line intersection: parametric position along infinite line A→B
+// Returns s ∈ (-∞, +∞); s=0 at A, s=1 at B. Returns 0.5 if parallel.
+// Optional: if clampToSegment=true, returns null when ray misses segment or goes backward
+function rayIntersect(origin, dir, segA, segB, clampToSegment) {
   const dx = segB[0] - segA[0],
     dy = segB[1] - segA[1];
   const denom = dir[0] * dy - dir[1] * dx;
-  if (Math.abs(denom) < 1e-10) return null;
+  if (Math.abs(denom) < 1e-10) return clampToSegment ? null : 0.5;
   const t =
     ((segA[0] - origin[0]) * dy - (segA[1] - origin[1]) * dx) / denom;
   const s =
     ((segA[0] - origin[0]) * dir[1] - (segA[1] - origin[1]) * dir[0]) /
     denom;
-  if (t < 0 || s < 0 || s > 1) return null;
-  return [origin[0] + t * dir[0], origin[1] + t * dir[1]];
+  if (clampToSegment && (t < 0 || s < 0 || s > 1)) return null;
+  if (clampToSegment) return [origin[0] + t * dir[0], origin[1] + t * dir[1]];
+  return s;
+}
+
+// Smooth continuous mapping: any real s → [0.2, 0.8], centered at 0.5
+// Uses tanh so there are no hard clamp boundaries
+function softCompress(s) {
+  return 0.5 + 0.3 * Math.tanh(3 * (s - 0.5));
 }
 
 // seededRng provided by noise.js
 
-// --- Glass presets ---
+// --- Glass presets (Sellmeier dispersion coefficients) ---
+// n²(λ) = 1 + Σ Bᵢλ² / (λ² - Cᵢ), λ in micrometers
+// Sources: Schott datasheets, RefractiveIndex.INFO (Peter 1923 for diamond)
 
 const GLASS_TYPES = {
-  bk7: { label: "BK7 (Borosilicate)", nMin: 1.51, nMax: 1.535 },
-  crown: { label: "Crown K9", nMin: 1.513, nMax: 1.538 },
-  flint: { label: "Dense Flint SF11", nMin: 1.74, nMax: 1.81 },
-  diamond: { label: "Diamond", nMin: 2.407, nMax: 2.451 },
+  silica: {
+    label: "Fused Silica",
+    // Malitson 1965, RefractiveIndex.INFO — n ≈ 1.45-1.47
+    sellmeier: [
+      [0.6961663, 0.004679148],
+      [0.4079426, 0.013512064],
+      [0.8974794, 97.934003],
+    ],
+  },
+  bk7: {
+    label: "BK7 (Borosilicate)",
+    // Schott datasheet — n ≈ 1.51-1.54
+    sellmeier: [
+      [1.03961212, 0.00600069867],
+      [0.231792344, 0.0200179144],
+      [1.01046945, 103.560653],
+    ],
+  },
+  flint: {
+    label: "Dense Flint SF11",
+    // Schott datasheet — n ≈ 1.74-1.81
+    sellmeier: [
+      [1.73848403, 0.0136068604],
+      [0.311168974, 0.0615960463],
+      [1.17490871, 121.922711],
+    ],
+  },
+  diamond: {
+    label: "Diamond",
+    // Peter 1923 two-term fit — n ≈ 2.41-2.45, C values as λ² (μm²)
+    sellmeier: [
+      [0.3306, 0.030625],   // C = 0.1750²
+      [4.3356, 0.011236],   // C = 0.1060²
+    ],
+  },
 };
 
-// Generate N evenly-spaced spectrum colors by interpolating wavelength → RGB
-// Pegged colors at key wavelengths (nm): 380 violet → 700 red
+// Evaluate Sellmeier equation: n(λ_μm) for a glass type
+function sellmeierN(glass, lambda_um) {
+  let n2 = 1;
+  for (const [B, C] of glass.sellmeier) {
+    n2 += (B * lambda_um * lambda_um) / (lambda_um * lambda_um - C);
+  }
+  return Math.sqrt(n2);
+}
+
+// Visible spectrum: 380nm (violet) to 700nm (red)
+const LAMBDA_MIN = 0.380; // μm
+const LAMBDA_MAX = 0.700; // μm
+
+// 7 reference colors at evenly-spaced positions for smooth interpolation
+// t: 0 (red/700nm) → 1 (violet/380nm)
+const SPECTRUM_STOPS = [
+  [0,     [255, 0, 0]],       // Red 700nm
+  [1/6,   [255, 140, 0]],     // Orange 620nm
+  [2/6,   [255, 240, 0]],     // Yellow 580nm
+  [3/6,   [0, 210, 0]],       // Green 530nm
+  [4/6,   [0, 40, 255]],      // Blue 470nm
+  [5/6,   [55, 0, 200]],      // Indigo 430nm
+  [1,     [130, 0, 190]],     // Violet 380nm
+];
+
 function spectrumColor(t) {
-  // t: 0 (red/700nm) → 1 (violet/380nm)
-  // Pegged reference points for smooth interpolation
-  const stops = [
-    [0.0,  [255, 40, 40]],    // Red 700nm
-    [0.15, [255, 150, 0]],    // Orange 620nm
-    [0.28, [255, 235, 0]],    // Yellow 580nm
-    [0.42, [0, 220, 70]],     // Green 530nm
-    [0.60, [0, 150, 255]],    // Blue 470nm
-    [0.78, [90, 30, 210]],    // Indigo 430nm
-    [1.0,  [170, 0, 230]],    // Violet 380nm
-  ];
-  for (let i = 0; i < stops.length - 1; i++) {
-    const [t0, c0] = stops[i];
-    const [t1, c1] = stops[i + 1];
+  for (let i = 0; i < SPECTRUM_STOPS.length - 1; i++) {
+    const [t0, c0] = SPECTRUM_STOPS[i];
+    const [t1, c1] = SPECTRUM_STOPS[i + 1];
     if (t <= t1) {
       const f = (t - t0) / (t1 - t0);
       return [
@@ -95,7 +149,7 @@ function spectrumColor(t) {
       ];
     }
   }
-  return stops[stops.length - 1][1];
+  return SPECTRUM_STOPS[SPECTRUM_STOPS.length - 1][1];
 }
 
 function getSpectrumColors(count) {
@@ -107,15 +161,30 @@ function getSpectrumColors(count) {
 }
 
 const BAND_PRESETS = {
-  6: getSpectrumColors(6),
-  7: getSpectrumColors(7),
-  12: getSpectrumColors(12),
-  20: getSpectrumColors(20),
+  // 6 ROYGBV: hardcoded — skip indigo
+  6: [
+    [255, 0, 0],       // Red
+    [255, 140, 0],     // Orange
+    [255, 240, 0],     // Yellow
+    [0, 210, 0],       // Green
+    [0, 40, 255],      // Blue
+    [130, 0, 190],     // Violet
+  ],
+  // 7 ROYGBIV: exact stop colors
+  7: SPECTRUM_STOPS.map(([, c]) => c),
+  // 13 Fine: 2×6+1, every 2nd band hits exact stop
+  13: getSpectrumColors(13),
+  // 25 Continuous: 4×6+1, every 4th band hits exact stop
+  25: getSpectrumColors(25),
 };
 
-// --- Layer builder ---
+// --- Layer builder (cached) ---
+
+let _cachedLayerDefs = null;
+let _cachedGlowSpan = -1;
 
 function buildLayerDefs(glowSpan) {
+  if (_cachedGlowSpan === glowSpan) return _cachedLayerDefs;
   // Core layer = 1.0× inter-ray distance (no gaps between rays)
   // Glow layers extend outward: 1.0 → glowSpan
   const coreSpan = 1.0;
@@ -126,6 +195,8 @@ function buildLayerDefs(glowSpan) {
     const t = i / (count - 1);
     defs.push([coreSpan + (glowSpan - coreSpan) * (1 - t), alphas[i]]);
   }
+  _cachedLayerDefs = defs;
+  _cachedGlowSpan = glowSpan;
   return defs;
 }
 
@@ -154,6 +225,26 @@ function getBloomCanvas(W, H) {
     _bloomCanvas.height = H;
   }
   return _bloomCanvas;
+}
+
+// --- Inter-ray spacing ---
+// Computes distance between adjacent rays at a given fraction along their paths
+// For edge rays, uses single neighbor; for interior rays, averages both neighbors
+
+function interRaySpacing(rayPosAt, bandCount, i, frac, fallbackWidth) {
+  if (bandCount < 2) return fallbackWidth;
+  const [mx, my] = rayPosAt(i, frac);
+  if (i === 0) {
+    const [nx, ny] = rayPosAt(1, frac);
+    return Math.hypot(nx - mx, ny - my);
+  }
+  if (i === bandCount - 1) {
+    const [px, py] = rayPosAt(i - 1, frac);
+    return Math.hypot(mx - px, my - py);
+  }
+  const [px, py] = rayPosAt(i - 1, frac);
+  const [nx, ny] = rayPosAt(i + 1, frac);
+  return (Math.hypot(mx - px, my - py) + Math.hypot(nx - mx, ny - my)) / 2;
 }
 
 // --- Drawing helpers ---
@@ -201,8 +292,6 @@ function drawExitBands(
   const rayLen = W * 0.72;
   const segments = 60;
   const bandCount = bands.length;
-
-  // Layer definitions (width multiplier, alpha) — 10 layers, dynamic span
   const layerDefs = buildLayerDefs(glowSpan);
 
   // Precompute all ray paths
@@ -219,61 +308,49 @@ function drawExitBands(
       xs[s] = ep[0] + dx * rayLen * frac;
       ys[s] = ep[1] + dy * rayLen * frac;
     }
-    rays.push({ xs, ys, dx, dy, ep });
+    rays.push({ xs, ys });
   }
 
-  // Precompute inter-ray spacing at each segment for glow sizing
-  // At each segment, compute distance between adjacent ray midpoints
-  const interRayDist = [];
+  // Position lookup for inter-ray spacing (segment midpoints)
+  const rayMidAt = (i, s) => [
+    (rays[i].xs[s] + rays[i].xs[s + 1]) * 0.5,
+    (rays[i].ys[s] + rays[i].ys[s + 1]) * 0.5,
+  ];
+
+  // Precompute inter-ray spacing at each segment
+  const interDist = [];
   for (let i = 0; i < bandCount; i++) {
     const dists = new Float64Array(segments);
     for (let s = 0; s < segments; s++) {
-      const mx = (rays[i].xs[s] + rays[i].xs[s + 1]) * 0.5;
-      const my = (rays[i].ys[s] + rays[i].ys[s + 1]) * 0.5;
-      let dist;
-      if (i === 0 && bandCount > 1) {
-        const nx = (rays[1].xs[s] + rays[1].xs[s + 1]) * 0.5;
-        const ny = (rays[1].ys[s] + rays[1].ys[s + 1]) * 0.5;
-        dist = Math.hypot(nx - mx, ny - my);
-      } else if (i === bandCount - 1) {
-        const px = (rays[i - 1].xs[s] + rays[i - 1].xs[s + 1]) * 0.5;
-        const py = (rays[i - 1].ys[s] + rays[i - 1].ys[s + 1]) * 0.5;
-        dist = Math.hypot(mx - px, my - py);
-      } else {
-        const px = (rays[i - 1].xs[s] + rays[i - 1].xs[s + 1]) * 0.5;
-        const py = (rays[i - 1].ys[s] + rays[i - 1].ys[s + 1]) * 0.5;
-        const nx = (rays[i + 1].xs[s] + rays[i + 1].xs[s + 1]) * 0.5;
-        const ny = (rays[i + 1].ys[s] + rays[i + 1].ys[s + 1]) * 0.5;
-        dist = (Math.hypot(mx - px, my - py) + Math.hypot(nx - mx, ny - my)) / 2;
-      }
-      dists[s] = dist;
+      dists[s] = interRaySpacing(rayMidAt, bandCount, i, s, 1);
     }
-    interRayDist.push(dists);
+    interDist.push(dists);
   }
 
   for (let i = 0; i < bandCount; i++) {
     const { xs, ys } = rays[i];
     const [r, g, b] = bands[i].color;
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
 
     for (const [wMul, baseAlpha] of layerDefs) {
       ctx.lineCap = "butt";
       for (let s = 0; s < segments; s++) {
         const frac = s / segments;
-        // Width = inter-ray spacing × wMul (all layers use same principle)
-        const segWidth = interRayDist[i][s] * wMul;
+        const segWidth = interDist[i][s] * wMul;
         const fade = 1 - frac * frac * frac;
         const segAlpha = baseAlpha * fade;
         if (segAlpha < 0.001) continue;
 
+        ctx.globalAlpha = segAlpha;
+        ctx.lineWidth = segWidth;
         ctx.beginPath();
         ctx.moveTo(xs[s], ys[s]);
         ctx.lineTo(xs[s + 1], ys[s + 1]);
-        ctx.strokeStyle = `rgba(${r},${g},${b},${segAlpha})`;
-        ctx.lineWidth = segWidth;
         ctx.stroke();
       }
     }
   }
+  ctx.globalAlpha = 1;
 }
 
 function drawGlow(ctx, pt, radius, color) {
@@ -366,16 +443,16 @@ function drawPrismEdges(ctx, verts, W) {
   }
 }
 
-function computeInternalRayPaths(entryPt, intAngles, intAvg, verts, bands, beamWidth, W, entryFaceDir, thetaI, exitPt, internalSpread) {
+function computeInternalRayPaths(entryPt, intAngles, intAvg, verts, bands, beamWidth, W, entryFaceDir, thetaI, inAngle, internalSpread) {
   const sc = W / 4096;
   const [apex, , right] = verts;
   const projectedBeamWidth = (beamWidth * sc) / Math.cos(thetaI);
   const bandCount = bands.length;
   const entryBandWidth = projectedBeamWidth / bandCount;
 
-  const baseDx = exitPt[0] - entryPt[0];
-  const baseDy = exitPt[1] - entryPt[1];
-  const baseAngle = Math.atan2(baseDy, baseDx);
+  // Base direction = average refracted ray (from Snell's law, not entry→exit midpoint)
+  const baseAngle = inAngle - intAvg;
+  const fallbackExit = lerpPt(apex, right, 0.5);
 
   const entryPts = [];
   const perColorExits = [];
@@ -390,7 +467,7 @@ function computeInternalRayPaths(entryPt, intAngles, intAvg, verts, bands, beamW
     const offset = (intAvg - intAngles[i]) * internalSpread;
     const angle = baseAngle + offset;
     const dir = [Math.cos(angle), Math.sin(angle)];
-    perColorExits.push(raySegmentIntersect(ep, dir, apex, right) || exitPt);
+    perColorExits.push(rayIntersect(ep, dir, apex, right, true) || fallbackExit);
   }
 
   return { entryPts, perColorExits, entryBandWidth };
@@ -401,6 +478,12 @@ function drawInternalRays(ctx, verts, bands, glowSpan, rayPaths) {
   const bandCount = bands.length;
   const layerDefs = buildLayerDefs(glowSpan);
   const segCount = 12;
+
+  // Position lookup for inter-ray spacing (linear interpolation along ray)
+  const rayPosAt = (i, frac) => [
+    entryPts[i][0] + (perColorExits[i][0] - entryPts[i][0]) * frac,
+    entryPts[i][1] + (perColorExits[i][1] - entryPts[i][1]) * frac,
+  ];
 
   ctx.save();
   ctx.beginPath();
@@ -414,53 +497,32 @@ function drawInternalRays(ctx, verts, bands, glowSpan, rayPaths) {
     const start = entryPts[i];
     const end = perColorExits[i];
     const [r, g, b] = bands[i].color;
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
 
     for (const [wMul, a] of layerDefs) {
       ctx.lineCap = "butt";
+      ctx.globalAlpha = a;
       for (let s = 0; s < segCount; s++) {
         const frac = s / segCount;
         const nextFrac = (s + 1) / segCount;
-
-        let spacing;
-        if (bandCount < 2) {
-          spacing = entryBandWidth;
-        } else if (i === 0) {
-          const myX = start[0] + (end[0] - start[0]) * frac;
-          const myY = start[1] + (end[1] - start[1]) * frac;
-          const nxX = entryPts[1][0] + (perColorExits[1][0] - entryPts[1][0]) * frac;
-          const nxY = entryPts[1][1] + (perColorExits[1][1] - entryPts[1][1]) * frac;
-          spacing = Math.hypot(nxX - myX, nxY - myY);
-        } else if (i === bandCount - 1) {
-          const myX = start[0] + (end[0] - start[0]) * frac;
-          const myY = start[1] + (end[1] - start[1]) * frac;
-          const pvX = entryPts[i - 1][0] + (perColorExits[i - 1][0] - entryPts[i - 1][0]) * frac;
-          const pvY = entryPts[i - 1][1] + (perColorExits[i - 1][1] - entryPts[i - 1][1]) * frac;
-          spacing = Math.hypot(myX - pvX, myY - pvY);
-        } else {
-          const myX = start[0] + (end[0] - start[0]) * frac;
-          const myY = start[1] + (end[1] - start[1]) * frac;
-          const pvX = entryPts[i - 1][0] + (perColorExits[i - 1][0] - entryPts[i - 1][0]) * frac;
-          const pvY = entryPts[i - 1][1] + (perColorExits[i - 1][1] - entryPts[i - 1][1]) * frac;
-          const nxX = entryPts[i + 1][0] + (perColorExits[i + 1][0] - entryPts[i + 1][0]) * frac;
-          const nxY = entryPts[i + 1][1] + (perColorExits[i + 1][1] - entryPts[i + 1][1]) * frac;
-          spacing = (Math.hypot(myX - pvX, myY - pvY) + Math.hypot(nxX - myX, nxY - myY)) / 2;
-        }
-
+        const spacing = interRaySpacing(rayPosAt, bandCount, i, frac, entryBandWidth);
         const segWidth = spacing * wMul;
-        const x0 = start[0] + (end[0] - start[0]) * frac;
-        const y0 = start[1] + (end[1] - start[1]) * frac;
-        const x1 = start[0] + (end[0] - start[0]) * nextFrac;
-        const y1 = start[1] + (end[1] - start[1]) * nextFrac;
 
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.strokeStyle = `rgba(${r},${g},${b},${a})`;
         ctx.lineWidth = segWidth;
+        ctx.beginPath();
+        ctx.moveTo(
+          start[0] + (end[0] - start[0]) * frac,
+          start[1] + (end[1] - start[1]) * frac,
+        );
+        ctx.lineTo(
+          start[0] + (end[0] - start[0]) * nextFrac,
+          start[1] + (end[1] - start[1]) * nextFrac,
+        );
         ctx.stroke();
       }
     }
   }
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
@@ -565,12 +627,18 @@ function renderPrism(canvas, config = {}) {
   const thetaI = (incidentAngle * Math.PI) / 180;
   const glass = GLASS_TYPES[glassType] || GLASS_TYPES.bk7;
 
-  // Build spectral bands
+  // Build spectral bands with Sellmeier dispersion (25% nonlinearity)
+  // Same total n range (nRed→nViolet), band spacing is 25% Sellmeier + 75% linear
   const spectrumColors = BAND_PRESETS[bandCount] || getSpectrumColors(bandCount);
-  const bands = spectrumColors.map((color, i) => ({
-    color,
-    n: glass.nMin + ((glass.nMax - glass.nMin) * i) / (spectrumColors.length - 1),
-  }));
+  const count = spectrumColors.length;
+  const nRed = sellmeierN(glass, LAMBDA_MAX);
+  const nViolet = sellmeierN(glass, LAMBDA_MIN);
+  const bands = spectrumColors.map((color, i) => {
+    const lambda_um = LAMBDA_MAX - ((LAMBDA_MAX - LAMBDA_MIN) * i) / (count - 1);
+    const nSellmeier = sellmeierN(glass, lambda_um);
+    const nLinear = nRed + (nViolet - nRed) * (i / (count - 1));
+    return { color, n: nLinear * 0.75 + nSellmeier * 0.25 };
+  });
 
   // 1. Background
   ctx.fillStyle = "#030303";
@@ -587,16 +655,27 @@ function renderPrism(canvas, config = {}) {
     (apex[0] + left[0] + right[0]) / 3,
     (apex[1] + left[1] + right[1]) / 3,
   ];
-  const entryPt = lerpPt(apex, left, 0.5);
-  const exitPt = lerpPt(apex, right, 0.5);
 
-  // 4. Entry physics
+  // 4. Entry physics — compute beam direction from incident angle
   const entryN = faceNormal(apex, left, center);
   const nAngle = Math.atan2(entryN[1], entryN[0]);
   const inAngle = nAngle + Math.PI;
   const beamAngle = inAngle - thetaI;
   const bDx = Math.cos(beamAngle),
     bDy = Math.sin(beamAngle);
+
+  // Compute reference beam at default angle (49°) for centering
+  const refThetaI = (49 * Math.PI) / 180;
+  const refBeamAngle = inAngle - refThetaI;
+  const refBDx = Math.cos(refBeamAngle), refBDy = Math.sin(refBeamAngle);
+  const refFarPt = [cx - refBDx * W, cy - refBDy * W];
+  const refEntryS = rayIntersect(refFarPt, [refBDx, refBDy], apex, left, false);
+
+  // Entry point: offset from reference so 49° → center of face
+  const farPt = [cx - bDx * W, cy - bDy * W];
+  const entryS = rayIntersect(farPt, [bDx, bDy], apex, left, false);
+  const entryPt = lerpPt(apex, left, softCompress(entryS - refEntryS + 0.5));
+
   const tBack =
     (W * 0.75) / Math.max(Math.abs(bDx), Math.abs(bDy), 0.001);
   const beamStart = [entryPt[0] - bDx * tBack, entryPt[1] - bDy * tBack];
@@ -649,14 +728,26 @@ function renderPrism(canvas, config = {}) {
   const efLen = Math.hypot(efDx, efDy);
   const entryFaceDir = [efDx / efLen, efDy / efLen];
 
-  // 6. Beam (drawn before prism so glass covers the round cap overlap)
+  // 6. Compute internal ray paths — uses Snell's law refracted angles directly
+  const rayPaths = computeInternalRayPaths(entryPt, intAngles, intAvg, verts, bands, beamWidth, W, entryFaceDir, thetaI, inAngle, internalSpread);
+
+  // Exit point: average refracted ray, centered at 49° reference
+  const avgRefAngle = inAngle - intAvg;
+  const avgRefDir = [Math.cos(avgRefAngle), Math.sin(avgRefAngle)];
+  const exitS = rayIntersect(entryPt, avgRefDir, apex, right, false);
+  // Reference exit at 49° — reuse refThetaI from entry computation
+  const refAvgN = sellmeierN(glass, (LAMBDA_MAX + LAMBDA_MIN) / 2);
+  const refAvgT2 = snell(1.0, refAvgN, refThetaI) || 0;
+  const refRefAngle = inAngle - refAvgT2;
+  const refRefDir = [Math.cos(refRefAngle), Math.sin(refRefAngle)];
+  const refExitS = rayIntersect(lerpPt(apex, left, 0.5), refRefDir, apex, right, false);
+  const exitPt = lerpPt(apex, right, softCompress(exitS - refExitS + 0.5));
+
+  // 7. Beam (drawn before prism so glass covers the round cap overlap)
   drawBeamLine(ctx, beamStart, entryPt, beamWidth * sc);
 
-  // 7. Entry glow
+  // 8. Entry glow
   drawGlow(ctx, entryPt, 180 * sc, [220, 228, 255]);
-
-  // 8. Compute internal ray paths (no drawing)
-  const rayPaths = computeInternalRayPaths(entryPt, intAngles, intAvg, verts, bands, beamWidth, W, entryFaceDir, thetaI, exitPt, internalSpread);
 
   // 9. Prism fill (background, below internal rays)
   drawPrismFill(ctx, verts);
@@ -670,13 +761,13 @@ function renderPrism(canvas, config = {}) {
   // 12. Prism edges (on top of internal rays and exit bands)
   drawPrismEdges(ctx, verts, W);
 
-  // 11. Bloom
+  // 13. Bloom
   if (showBloom) applyBloom(ctx, W, H);
 
-  // 12. Exit glow
+  // 14. Exit glow
   drawGlow(ctx, exitPt, 220 * sc, [255, 255, 255]);
 
-  // 13. Vignette
+  // 15. Vignette
   applyVignette(ctx, W, H);
 
   // Return computed angles for display

@@ -18,12 +18,31 @@ Interactive physics-based light and signal visualization tool. Six generators:
 
 ### Prism Refraction
 
-- Accurate Snell's law with wavelength-dependent refractive indices
-- 4 glass presets: BK7 Borosilicate, Crown K9, Dense Flint SF11, Diamond
-- Total internal reflection detection
+- Sellmeier dispersion equation (`n²(λ) = 1 + Σ Bᵢλ²/(λ²-Cᵢ)`) with Schott datasheet coefficients
+- 4 glass presets: BK7 Borosilicate, Fused Silica, Dense Flint SF11, Diamond
+- Snell's law refraction at both faces with total internal reflection detection
+- Configurable spectral bands: 6 (ROYGBV), 7 (ROYGBIV), 13 (Fine), 19 (Continuous)
+- Geometric entry/exit points via `rayIntersect` + `softCompress` (tanh mapping to central 60%)
 - Configurable prism angle, incident angle, rotation, spread, size, beam width
+- Glow span control for ray softness
+- Layered rendering: prism fill → internal rays → exit bands → prism edges
 - Star field and bloom post-processing
 - PNG export (2K and 4K)
+
+**Science vs. implementation tradeoffs:**
+
+| Aspect | Physics | Implementation |
+|--------|---------|----------------|
+| Dispersion | Sellmeier `n(λ)` — BK7 Δn = 1.37% | 75% linear + 25% Sellmeier — same total range, subtler nonlinearity |
+| Entry/exit points | Ray intersection on prism faces | `softCompress`: tanh maps to [0.2, 0.8] of face, centered at 49° |
+| Internal spread | ~0.5° angular separation | 24× exaggeration (`internalSpread = 12`) for visibility |
+| Exit spread | ~1-2° for BK7 | `spread` slider (default 8×) amplifies for artistic effect |
+| Spectrum colors | CIE 1931 XYZ → sRGB | 7 hand-tuned RGB stops at even intervals, linear interpolation |
+| Band count | Continuous spectrum | Discretized: 6 (ROYGBV), 7 (ROYGBIV), 13, 25 bands |
+| Beam width | Infinitely thin ray | Configurable width (default 22px) for visibility |
+| Ray rendering | Single ray per wavelength | 10-layer glow stack per ray (configurable span) |
+| Glass appearance | Transparent, refractive | Semi-opaque fill with gradient for visibility |
+| Glow/bloom | N/A (photon transport) | Artistic canvas glow and bloom post-processing |
 
 ### Pulse Profile
 
@@ -75,9 +94,9 @@ Interactive physics-based light and signal visualization tool. Six generators:
 All calculations use real physics:
 
 - **Snell's law**: `n1 sin(theta1) = n2 sin(theta2)` with TIR detection
-- **Glass refractive indices**: Match published manufacturer specs (Schott, etc.)
+- **Sellmeier dispersion**: `n²(λ) = 1 + Σ Bᵢλ²/(λ² - Cᵢ)` — Schott datasheets, 25% nonlinearity blended with 75% linear
 - **Prism deviation**: `delta = theta_i + theta_e - A`
-- **Dispersion**: Shorter wavelengths refract more (violet > red) — spread is artistically exaggerated for visibility
+- **Dispersion**: Shorter wavelengths refract more (violet > red) — spread artistically exaggerated for visibility
 - **Gravitational lensing**: Einstein's deflection α = θ_E² / θ, lens equation β = θ - θ_E²/θ
 - **Emission nebulae**: H-alpha (656nm), [OIII] (501nm), [SII] (672nm) emission lines
 - **Moiré fringes**: cos(2πf₁x)·cos(2πf₂x) = ½[cos(2π(f₁-f₂)x) + cos(2π(f₁+f₂)x)]

@@ -47,17 +47,38 @@
 <!-- ============ PRISM GENERATOR ============ -->
 <div class="generator active" id="gen-prism">
   <div class="controls">
-    <!-- Material -->
+    <!-- Material & Light -->
     <div class="control-group">
       <label>Glass Type</label>
       <select id="p-glass">
-        <option value="bk7">BK7 Borosilicate (n 1.51-1.54)</option>
-        <option value="crown">Crown K9 (n 1.51-1.54)</option>
+        <option value="silica">Fused Silica (n 1.45-1.47)</option>
+        <option value="bk7" selected>BK7 Borosilicate (n 1.51-1.54)</option>
         <option value="flint">Dense Flint SF11 (n 1.74-1.81)</option>
         <option value="diamond">Diamond (n 2.41-2.45)</option>
       </select>
     </div>
-    <!-- Geometry -->
+    <div class="control-group">
+      <label>Incident Angle <span class="value" id="v-p-incidentAngle">49</span>&deg;</label>
+      <input type="range" id="p-incidentAngle" min="10" max="85" value="49" step="1">
+    </div>
+    <div class="control-group">
+      <label>Spectral Bands</label>
+      <select id="p-bandCount">
+        <option value="6">6 (ROYGBV)</option>
+        <option value="7" selected>7 (ROYGBIV)</option>
+        <option value="13">13 (Fine)</option>
+        <option value="25">25 (Continuous)</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Spread <span class="value" id="v-p-spread">8</span>x</label>
+      <input type="range" id="p-spread" min="1" max="30" value="8" step="1">
+    </div>
+    <div class="control-group">
+      <label>Beam Width <span class="value" id="v-p-beamWidth">22</span></label>
+      <input type="range" id="p-beamWidth" min="5" max="50" value="22" step="1">
+    </div>
+    <!-- Prism Geometry -->
     <div class="control-group">
       <label>Prism Angle <span class="value" id="v-p-prismAngle">60</span>&deg;</label>
       <input type="range" id="p-prismAngle" min="30" max="120" value="60" step="1">
@@ -69,28 +90,6 @@
     <div class="control-group">
       <label>Rotation <span class="value" id="v-p-rotation">0</span>&deg;</label>
       <input type="range" id="p-rotation" min="-180" max="180" value="0" step="1">
-    </div>
-    <!-- Light -->
-    <div class="control-group">
-      <label>Incident Angle <span class="value" id="v-p-incidentAngle">49</span>&deg;</label>
-      <input type="range" id="p-incidentAngle" min="10" max="85" value="49" step="1">
-    </div>
-    <div class="control-group">
-      <label>Beam Width <span class="value" id="v-p-beamWidth">22</span></label>
-      <input type="range" id="p-beamWidth" min="5" max="50" value="22" step="1">
-    </div>
-    <div class="control-group">
-      <label>Spectral Bands</label>
-      <select id="p-bandCount">
-        <option value="6">6 (ROYGBV)</option>
-        <option value="7" selected>7 (ROYGBIV)</option>
-        <option value="12">12 (Fine)</option>
-        <option value="20">20 (Continuous)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>Spread Multiplier <span class="value" id="v-p-spread">8</span>x</label>
-      <input type="range" id="p-spread" min="1" max="30" value="8" step="1">
     </div>
     <!-- Visual -->
     <div class="control-group">

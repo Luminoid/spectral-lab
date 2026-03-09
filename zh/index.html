@@ -47,17 +47,38 @@
 <!-- ============ PRISM GENERATOR ============ -->
 <div class="generator active" id="gen-prism">
   <div class="controls">
-    <!-- 材质 -->
+    <!-- 材质与光线 -->
     <div class="control-group">
       <label>玻璃类型</label>
       <select id="p-glass">
-        <option value="bk7">BK7 硼硅酸盐 (n 1.51-1.54)</option>
-        <option value="crown">冕牌 K9 (n 1.51-1.54)</option>
+        <option value="silica">熔融石英 (n 1.45-1.47)</option>
+        <option value="bk7" selected>BK7 硼硅酸盐 (n 1.51-1.54)</option>
         <option value="flint">重火石 SF11 (n 1.74-1.81)</option>
         <option value="diamond">钻石 (n 2.41-2.45)</option>
       </select>
     </div>
-    <!-- 几何 -->
+    <div class="control-group">
+      <label>入射角 <span class="value" id="v-p-incidentAngle">49</span>&deg;</label>
+      <input type="range" id="p-incidentAngle" min="10" max="85" value="49" step="1">
+    </div>
+    <div class="control-group">
+      <label>光谱带数</label>
+      <select id="p-bandCount">
+        <option value="6">6 (红橙黄绿蓝紫)</option>
+        <option value="7" selected>7 (红橙黄绿蓝靛紫)</option>
+        <option value="13">13 (精细)</option>
+        <option value="25">25 (连续)</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>色散倍率 <span class="value" id="v-p-spread">8</span>x</label>
+      <input type="range" id="p-spread" min="1" max="30" value="8" step="1">
+    </div>
+    <div class="control-group">
+      <label>光束宽度 <span class="value" id="v-p-beamWidth">22</span></label>
+      <input type="range" id="p-beamWidth" min="5" max="50" value="22" step="1">
+    </div>
+    <!-- 棱镜几何 -->
     <div class="control-group">
       <label>棱镜角度 <span class="value" id="v-p-prismAngle">60</span>&deg;</label>
       <input type="range" id="p-prismAngle" min="30" max="120" value="60" step="1">
@@ -69,28 +90,6 @@
     <div class="control-group">
       <label>旋转 <span class="value" id="v-p-rotation">0</span>&deg;</label>
       <input type="range" id="p-rotation" min="-180" max="180" value="0" step="1">
-    </div>
-    <!-- 光线 -->
-    <div class="control-group">
-      <label>入射角 <span class="value" id="v-p-incidentAngle">49</span>&deg;</label>
-      <input type="range" id="p-incidentAngle" min="10" max="85" value="49" step="1">
-    </div>
-    <div class="control-group">
-      <label>光束宽度 <span class="value" id="v-p-beamWidth">22</span></label>
-      <input type="range" id="p-beamWidth" min="5" max="50" value="22" step="1">
-    </div>
-    <div class="control-group">
-      <label>光谱带数</label>
-      <select id="p-bandCount">
-        <option value="6">6 (红橙黄绿蓝紫)</option>
-        <option value="7" selected>7 (红橙黄绿蓝靛紫)</option>
-        <option value="12">12 (精细)</option>
-        <option value="20">20 (连续)</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>色散倍率 <span class="value" id="v-p-spread">8</span>x</label>
-      <input type="range" id="p-spread" min="1" max="30" value="8" step="1">
     </div>
     <!-- 视觉 -->
     <div class="control-group">
