@@ -101,12 +101,14 @@ const prismInfo = document.getElementById('prism-info');
 function getPrismConfig() {
   return {
     glassType: document.getElementById('p-glass').value,
+    bandCount: +document.getElementById('p-bandCount').value,
     prismAngle: +document.getElementById('p-prismAngle').value,
     incidentAngle: +document.getElementById('p-incidentAngle').value,
     rotation: +document.getElementById('p-rotation').value,
     spread: +document.getElementById('p-spread').value,
     prismScale: +document.getElementById('p-prismScale').value / 100,
     beamWidth: +document.getElementById('p-beamWidth').value,
+    glowSpan: +document.getElementById('p-glowSpan').value,
     showStars: document.getElementById('p-stars').checked,
     showBloom: document.getElementById('p-bloom').checked,
   };

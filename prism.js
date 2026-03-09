@@ -69,15 +69,65 @@ const GLASS_TYPES = {
   diamond: { label: "Diamond", nMin: 2.407, nMax: 2.451 },
 };
 
-const SPECTRUM_COLORS = [
-  [255, 40, 40],
-  [255, 150, 0],
-  [255, 235, 0],
-  [0, 220, 70],
-  [0, 150, 255],
-  [90, 30, 210],
-  [170, 0, 230],
-];
+// Generate N evenly-spaced spectrum colors by interpolating wavelength → RGB
+// Pegged colors at key wavelengths (nm): 380 violet → 700 red
+function spectrumColor(t) {
+  // t: 0 (red/700nm) → 1 (violet/380nm)
+  // Pegged reference points for smooth interpolation
+  const stops = [
+    [0.0,  [255, 40, 40]],    // Red 700nm
+    [0.15, [255, 150, 0]],    // Orange 620nm
+    [0.28, [255, 235, 0]],    // Yellow 580nm
+    [0.42, [0, 220, 70]],     // Green 530nm
+    [0.60, [0, 150, 255]],    // Blue 470nm
+    [0.78, [90, 30, 210]],    // Indigo 430nm
+    [1.0,  [170, 0, 230]],    // Violet 380nm
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const [t0, c0] = stops[i];
+    const [t1, c1] = stops[i + 1];
+    if (t <= t1) {
+      const f = (t - t0) / (t1 - t0);
+      return [
+        Math.round(c0[0] + (c1[0] - c0[0]) * f),
+        Math.round(c0[1] + (c1[1] - c0[1]) * f),
+        Math.round(c0[2] + (c1[2] - c0[2]) * f),
+      ];
+    }
+  }
+  return stops[stops.length - 1][1];
+}
+
+function getSpectrumColors(count) {
+  const colors = [];
+  for (let i = 0; i < count; i++) {
+    colors.push(spectrumColor(i / (count - 1)));
+  }
+  return colors;
+}
+
+const BAND_PRESETS = {
+  6: getSpectrumColors(6),
+  7: getSpectrumColors(7),
+  12: getSpectrumColors(12),
+  20: getSpectrumColors(20),
+};
+
+// --- Layer builder ---
+
+function buildLayerDefs(glowSpan) {
+  // Core layer = 1.0× inter-ray distance (no gaps between rays)
+  // Glow layers extend outward: 1.0 → glowSpan
+  const coreSpan = 1.0;
+  const count = 10;
+  const alphas = [0.01, 0.02, 0.04, 0.07, 0.11, 0.16, 0.24, 0.35, 0.52, 0.8];
+  const defs = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+    defs.push([coreSpan + (glowSpan - coreSpan) * (1 - t), alphas[i]]);
+  }
+  return defs;
+}
 
 // --- Cached resources ---
 
@@ -146,33 +196,22 @@ function drawExitBands(
   bands,
   spread,
   W,
-  beamWidth,
+  glowSpan,
 ) {
   const rayLen = W * 0.72;
-  const sc = W / 4096;
   const segments = 60;
-  const beamScale = beamWidth / 22;
+  const bandCount = bands.length;
 
-  // Layer definitions (width multiplier, alpha)
-  const layerDefs = [
-    [6, 0.015],
-    [4, 0.03],
-    [2.5, 0.07],
-    [1.5, 0.15],
-    [0.8, 0.35],
-    [0.3, 0.8],
-  ];
+  // Layer definitions (width multiplier, alpha) — 10 layers, dynamic span
+  const layerDefs = buildLayerDefs(glowSpan);
 
-  // Batch by band+layer: build full path per band per layer, single stroke each
-  for (let i = 0; i < bands.length; i++) {
+  // Precompute all ray paths
+  const rays = [];
+  for (let i = 0; i < bandCount; i++) {
     const offset = (exitAngles[i] - exitAvg) * spread;
     const angle = exitBase + offset;
-    const dx = Math.cos(angle),
-      dy = Math.sin(angle);
-    const [r, g, b] = bands[i].color;
+    const dx = Math.cos(angle), dy = Math.sin(angle);
     const ep = perColorExits[i];
-
-    // Precompute segment endpoints
     const xs = new Float64Array(segments + 1);
     const ys = new Float64Array(segments + 1);
     for (let s = 0; s <= segments; s++) {
@@ -180,52 +219,59 @@ function drawExitBands(
       xs[s] = ep[0] + dx * rayLen * frac;
       ys[s] = ep[1] + dy * rayLen * frac;
     }
+    rays.push({ xs, ys, dx, dy, ep });
+  }
+
+  // Precompute inter-ray spacing at each segment for glow sizing
+  // At each segment, compute distance between adjacent ray midpoints
+  const interRayDist = [];
+  for (let i = 0; i < bandCount; i++) {
+    const dists = new Float64Array(segments);
+    for (let s = 0; s < segments; s++) {
+      const mx = (rays[i].xs[s] + rays[i].xs[s + 1]) * 0.5;
+      const my = (rays[i].ys[s] + rays[i].ys[s + 1]) * 0.5;
+      let dist;
+      if (i === 0 && bandCount > 1) {
+        const nx = (rays[1].xs[s] + rays[1].xs[s + 1]) * 0.5;
+        const ny = (rays[1].ys[s] + rays[1].ys[s + 1]) * 0.5;
+        dist = Math.hypot(nx - mx, ny - my);
+      } else if (i === bandCount - 1) {
+        const px = (rays[i - 1].xs[s] + rays[i - 1].xs[s + 1]) * 0.5;
+        const py = (rays[i - 1].ys[s] + rays[i - 1].ys[s + 1]) * 0.5;
+        dist = Math.hypot(mx - px, my - py);
+      } else {
+        const px = (rays[i - 1].xs[s] + rays[i - 1].xs[s + 1]) * 0.5;
+        const py = (rays[i - 1].ys[s] + rays[i - 1].ys[s + 1]) * 0.5;
+        const nx = (rays[i + 1].xs[s] + rays[i + 1].xs[s + 1]) * 0.5;
+        const ny = (rays[i + 1].ys[s] + rays[i + 1].ys[s + 1]) * 0.5;
+        dist = (Math.hypot(mx - px, my - py) + Math.hypot(nx - mx, ny - my)) / 2;
+      }
+      dists[s] = dist;
+    }
+    interRayDist.push(dists);
+  }
+
+  for (let i = 0; i < bandCount; i++) {
+    const { xs, ys } = rays[i];
+    const [r, g, b] = bands[i].color;
 
     for (const [wMul, baseAlpha] of layerDefs) {
       ctx.lineCap = "butt";
-
-      // Blended region (segments 0-11): color shifts per segment, must draw individually
-      for (let s = 0; s < segments && s < 12; s++) {
+      for (let s = 0; s < segments; s++) {
         const frac = s / segments;
-        const sigma = Math.max(4, (6 + 42 * frac) * beamScale) * sc;
-        const wm = Math.max(0, 0.5 * (1 - frac * 5));
-        const cr = Math.round(r * (1 - wm) + 255 * wm);
-        const cg = Math.round(g * (1 - wm) + 255 * wm);
-        const cb = Math.round(b * (1 - wm) + 255 * wm);
+        // Width = inter-ray spacing × wMul (all layers use same principle)
+        const segWidth = interRayDist[i][s] * wMul;
+        const fade = 1 - frac * frac * frac;
+        const segAlpha = baseAlpha * fade;
+        if (segAlpha < 0.001) continue;
 
         ctx.beginPath();
         ctx.moveTo(xs[s], ys[s]);
         ctx.lineTo(xs[s + 1], ys[s + 1]);
-        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${baseAlpha})`;
-        ctx.lineWidth = sigma * wMul;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${segAlpha})`;
+        ctx.lineWidth = segWidth;
         ctx.stroke();
       }
-
-      // Uniform region (segments 12-59): same color, group by quantized width
-      // to batch ~4-8 segments per stroke() call instead of one each
-      const uniformColor = `rgba(${r},${g},${b},${baseAlpha})`;
-      ctx.strokeStyle = uniformColor;
-      const widthBucketSize = 2 * sc; // quantize widths into 2px buckets
-      let currentBucketWidth = -1;
-
-      for (let s = 12; s < segments; s++) {
-        const frac = s / segments;
-        const sigma = Math.max(4, (6 + 42 * frac) * beamScale) * sc;
-        const targetWidth = sigma * wMul;
-        const bucketWidth = Math.round(targetWidth / widthBucketSize) * widthBucketSize;
-
-        if (bucketWidth !== currentBucketWidth) {
-          // Flush previous batch
-          if (currentBucketWidth > 0) ctx.stroke();
-          ctx.beginPath();
-          ctx.lineWidth = bucketWidth || targetWidth;
-          currentBucketWidth = bucketWidth;
-        }
-        ctx.moveTo(xs[s], ys[s]);
-        ctx.lineTo(xs[s + 1], ys[s + 1]);
-      }
-      // Flush final batch
-      if (currentBucketWidth > 0) ctx.stroke();
     }
   }
 }
@@ -239,18 +285,23 @@ function drawGlow(ctx, pt, radius, color) {
     pt[1],
     radius,
   );
-  grad.addColorStop(0, `rgba(${color[0]},${color[1]},${color[2]},0.3)`);
-  grad.addColorStop(0.3, `rgba(${color[0]},${color[1]},${color[2]},0.1)`);
-  grad.addColorStop(1, `rgba(${color[0]},${color[1]},${color[2]},0)`);
+  const [cr, cg, cb] = color;
+  grad.addColorStop(0, `rgba(${cr},${cg},${cb},0.35)`);
+  grad.addColorStop(0.08, `rgba(${cr},${cg},${cb},0.28)`);
+  grad.addColorStop(0.18, `rgba(${cr},${cg},${cb},0.2)`);
+  grad.addColorStop(0.3, `rgba(${cr},${cg},${cb},0.13)`);
+  grad.addColorStop(0.45, `rgba(${cr},${cg},${cb},0.07)`);
+  grad.addColorStop(0.6, `rgba(${cr},${cg},${cb},0.035)`);
+  grad.addColorStop(0.8, `rgba(${cr},${cg},${cb},0.01)`);
+  grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
   ctx.fillStyle = grad;
   ctx.beginPath();
   ctx.arc(pt[0], pt[1], radius, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function drawPrismGlass(ctx, verts, W) {
+function drawPrismFill(ctx, verts) {
   const [apex, left, right] = verts;
-  const sc = W / 4096;
   const minY = Math.min(apex[1], left[1], right[1]);
   const maxY = Math.max(apex[1], left[1], right[1]);
 
@@ -266,24 +317,11 @@ function drawPrismGlass(ctx, verts, W) {
   ctx.closePath();
   ctx.fillStyle = grad;
   ctx.fill();
+}
 
-  // Face highlights
-  ctx.save();
-  ctx.globalAlpha = 0.15;
-  ctx.beginPath();
-  ctx.moveTo(apex[0], apex[1]);
-  ctx.lineTo(left[0], left[1]);
-  ctx.strokeStyle = "rgba(200,210,245,1)";
-  ctx.lineWidth = 30 * sc;
-  ctx.stroke();
-  ctx.globalAlpha = 0.08;
-  ctx.beginPath();
-  ctx.moveTo(apex[0], apex[1]);
-  ctx.lineTo(right[0], right[1]);
-  ctx.strokeStyle = "rgba(210,190,220,1)";
-  ctx.lineWidth = 24 * sc;
-  ctx.stroke();
-  ctx.restore();
+function drawPrismEdges(ctx, verts, W) {
+  const [apex, left, right] = verts;
+  const sc = W / 4096;
 
   // Outer glow
   ctx.save();
@@ -328,10 +366,42 @@ function drawPrismGlass(ctx, verts, W) {
   }
 }
 
-function drawInternalRays(ctx, entryPt, perColorExits, verts, bands, beamWidth) {
-  const beamScale = beamWidth / 22;
+function computeInternalRayPaths(entryPt, intAngles, intAvg, verts, bands, beamWidth, W, entryFaceDir, thetaI, exitPt, internalSpread) {
+  const sc = W / 4096;
+  const [apex, , right] = verts;
+  const projectedBeamWidth = (beamWidth * sc) / Math.cos(thetaI);
+  const bandCount = bands.length;
+  const entryBandWidth = projectedBeamWidth / bandCount;
 
-  // Clip to prism
+  const baseDx = exitPt[0] - entryPt[0];
+  const baseDy = exitPt[1] - entryPt[1];
+  const baseAngle = Math.atan2(baseDy, baseDx);
+
+  const entryPts = [];
+  const perColorExits = [];
+  for (let i = 0; i < bandCount; i++) {
+    const t = (i / (bandCount - 1) - 0.5) * (projectedBeamWidth - entryBandWidth);
+    const ep = [
+      entryPt[0] + entryFaceDir[0] * t,
+      entryPt[1] + entryFaceDir[1] * t,
+    ];
+    entryPts.push(ep);
+
+    const offset = (intAvg - intAngles[i]) * internalSpread;
+    const angle = baseAngle + offset;
+    const dir = [Math.cos(angle), Math.sin(angle)];
+    perColorExits.push(raySegmentIntersect(ep, dir, apex, right) || exitPt);
+  }
+
+  return { entryPts, perColorExits, entryBandWidth };
+}
+
+function drawInternalRays(ctx, verts, bands, glowSpan, rayPaths) {
+  const { entryPts, perColorExits, entryBandWidth } = rayPaths;
+  const bandCount = bands.length;
+  const layerDefs = buildLayerDefs(glowSpan);
+  const segCount = 12;
+
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(verts[0][0], verts[0][1]);
@@ -340,21 +410,55 @@ function drawInternalRays(ctx, entryPt, perColorExits, verts, bands, beamWidth) 
   ctx.closePath();
   ctx.clip();
 
-  for (let i = 0; i < bands.length; i++) {
+  for (let i = 0; i < bandCount; i++) {
+    const start = entryPts[i];
     const end = perColorExits[i];
     const [r, g, b] = bands[i].color;
 
-    for (const [w, a] of [
-      [12 * beamScale, 0.08],
-      [6 * beamScale, 0.18],
-      [3 * beamScale, 0.35],
-    ]) {
-      ctx.beginPath();
-      ctx.moveTo(entryPt[0], entryPt[1]);
-      ctx.lineTo(end[0], end[1]);
-      ctx.strokeStyle = `rgba(${r},${g},${b},${a})`;
-      ctx.lineWidth = w;
-      ctx.stroke();
+    for (const [wMul, a] of layerDefs) {
+      ctx.lineCap = "butt";
+      for (let s = 0; s < segCount; s++) {
+        const frac = s / segCount;
+        const nextFrac = (s + 1) / segCount;
+
+        let spacing;
+        if (bandCount < 2) {
+          spacing = entryBandWidth;
+        } else if (i === 0) {
+          const myX = start[0] + (end[0] - start[0]) * frac;
+          const myY = start[1] + (end[1] - start[1]) * frac;
+          const nxX = entryPts[1][0] + (perColorExits[1][0] - entryPts[1][0]) * frac;
+          const nxY = entryPts[1][1] + (perColorExits[1][1] - entryPts[1][1]) * frac;
+          spacing = Math.hypot(nxX - myX, nxY - myY);
+        } else if (i === bandCount - 1) {
+          const myX = start[0] + (end[0] - start[0]) * frac;
+          const myY = start[1] + (end[1] - start[1]) * frac;
+          const pvX = entryPts[i - 1][0] + (perColorExits[i - 1][0] - entryPts[i - 1][0]) * frac;
+          const pvY = entryPts[i - 1][1] + (perColorExits[i - 1][1] - entryPts[i - 1][1]) * frac;
+          spacing = Math.hypot(myX - pvX, myY - pvY);
+        } else {
+          const myX = start[0] + (end[0] - start[0]) * frac;
+          const myY = start[1] + (end[1] - start[1]) * frac;
+          const pvX = entryPts[i - 1][0] + (perColorExits[i - 1][0] - entryPts[i - 1][0]) * frac;
+          const pvY = entryPts[i - 1][1] + (perColorExits[i - 1][1] - entryPts[i - 1][1]) * frac;
+          const nxX = entryPts[i + 1][0] + (perColorExits[i + 1][0] - entryPts[i + 1][0]) * frac;
+          const nxY = entryPts[i + 1][1] + (perColorExits[i + 1][1] - entryPts[i + 1][1]) * frac;
+          spacing = (Math.hypot(myX - pvX, myY - pvY) + Math.hypot(nxX - myX, nxY - myY)) / 2;
+        }
+
+        const segWidth = spacing * wMul;
+        const x0 = start[0] + (end[0] - start[0]) * frac;
+        const y0 = start[1] + (end[1] - start[1]) * frac;
+        const x1 = start[0] + (end[0] - start[0]) * nextFrac;
+        const y1 = start[1] + (end[1] - start[1]) * nextFrac;
+
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.strokeStyle = `rgba(${r},${g},${b},${a})`;
+        ctx.lineWidth = segWidth;
+        ctx.stroke();
+      }
     }
   }
   ctx.restore();
@@ -370,19 +474,29 @@ function drawBeamLine(ctx, start, end, coreWidth) {
     [coreWidth * 1.3, 0.55, [248, 250, 255]],
   ];
   for (const [w, a, c] of layers) {
+    const grad = ctx.createLinearGradient(start[0], start[1], end[0], end[1]);
+    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+    grad.addColorStop(0.4, `rgba(${c[0]},${c[1]},${c[2]},${a * 0.3})`);
+    grad.addColorStop(0.75, `rgba(${c[0]},${c[1]},${c[2]},${a * 0.7})`);
+    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},${a})`);
     ctx.beginPath();
     ctx.moveTo(start[0], start[1]);
     ctx.lineTo(end[0], end[1]);
-    ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+    ctx.strokeStyle = grad;
     ctx.lineWidth = w;
     ctx.lineCap = "round";
     ctx.stroke();
   }
   // Core
+  const coreGrad = ctx.createLinearGradient(start[0], start[1], end[0], end[1]);
+  coreGrad.addColorStop(0, "rgba(255,255,255,0)");
+  coreGrad.addColorStop(0.4, "rgba(255,255,255,0.3)");
+  coreGrad.addColorStop(0.75, "rgba(255,255,255,0.7)");
+  coreGrad.addColorStop(1, "rgba(255,255,255,1)");
   ctx.beginPath();
   ctx.moveTo(start[0], start[1]);
   ctx.lineTo(end[0], end[1]);
-  ctx.strokeStyle = "rgba(255,255,255,1)";
+  ctx.strokeStyle = coreGrad;
   ctx.lineWidth = coreWidth;
   ctx.lineCap = "round";
   ctx.stroke();
@@ -436,13 +550,15 @@ function renderPrism(canvas, config = {}) {
   const {
     prismAngle = 60,
     rotation = 0,
-    spread = 10,
+    spread = 8,
     incidentAngle = 49,
     prismScale = 0.32,
     beamWidth = 22,
     showStars = true,
     showBloom = true,
     glassType = "bk7",
+    bandCount = 7,
+    glowSpan = 1,
   } = config;
 
   const A = (prismAngle * Math.PI) / 180;
@@ -450,9 +566,10 @@ function renderPrism(canvas, config = {}) {
   const glass = GLASS_TYPES[glassType] || GLASS_TYPES.bk7;
 
   // Build spectral bands
-  const bands = SPECTRUM_COLORS.map((color, i) => ({
+  const spectrumColors = BAND_PRESETS[bandCount] || getSpectrumColors(bandCount);
+  const bands = spectrumColors.map((color, i) => ({
     color,
-    n: glass.nMin + ((glass.nMax - glass.nMin) * i) / (SPECTRUM_COLORS.length - 1),
+    n: glass.nMin + ((glass.nMax - glass.nMin) * i) / (spectrumColors.length - 1),
   }));
 
   // 1. Background
@@ -511,7 +628,8 @@ function renderPrism(canvas, config = {}) {
 
   if (tir) {
     // Total internal reflection — just show beam + prism
-    drawPrismGlass(ctx, verts, W);
+    drawPrismFill(ctx, verts);
+    drawPrismEdges(ctx, verts, W);
     drawBeamLine(ctx, beamStart, entryPt, beamWidth * sc);
     drawGlow(ctx, entryPt, 180 * sc, [220, 228, 255]);
     applyVignette(ctx, W, H);
@@ -521,42 +639,42 @@ function renderPrism(canvas, config = {}) {
   const exitAvg = exitAngles.reduce((a, b) => a + b, 0) / exitAngles.length;
   const exitBase = exNAngle + exitAvg;
 
-  // Compute per-color exit points: where each internal ray hits the exit face
-  // Uses the same spread as internal ray drawing so they visually connect
+  // Internal refraction angles for each band
   const intAngles = bands.map((b) => snell(1.0, b.n, thetaI));
   const intAvg = intAngles.reduce((a, b) => a + b, 0) / intAngles.length;
-  const baseDx = exitPt[0] - entryPt[0];
-  const baseDy = exitPt[1] - entryPt[1];
-  const baseAngle = Math.atan2(baseDy, baseDx);
   const internalSpread = 12; // artistic exaggeration of ~0.5° real spread
 
-  const perColorExits = bands.map((_, i) => {
-    const offset = (intAvg - intAngles[i]) * internalSpread;
-    const angle = baseAngle + offset;
-    const dir = [Math.cos(angle), Math.sin(angle)];
-    return raySegmentIntersect(entryPt, dir, apex, right) || exitPt;
-  });
+  // Entry face direction (apex→left) for spreading rays across the beam width
+  const efDx = left[0] - apex[0], efDy = left[1] - apex[1];
+  const efLen = Math.hypot(efDx, efDy);
+  const entryFaceDir = [efDx / efLen, efDy / efLen];
 
-  // 6. Exit bands (each starts from its per-color exit point)
-  drawExitBands(ctx, perColorExits, exitBase, exitAngles, exitAvg, bands, spread, W, beamWidth);
-
-  // 7. Bloom
-  if (showBloom) applyBloom(ctx, W, H);
-
-  // 8. Exit glow
-  drawGlow(ctx, exitPt, 220 * sc, [255, 255, 255]);
-
-  // 9. Prism glass
-  drawPrismGlass(ctx, verts, W);
-
-  // 10. Internal rays (each draws to its per-color exit point)
-  drawInternalRays(ctx, entryPt, perColorExits, verts, bands, beamWidth);
-
-  // 11. Beam
+  // 6. Beam (drawn before prism so glass covers the round cap overlap)
   drawBeamLine(ctx, beamStart, entryPt, beamWidth * sc);
 
-  // 12. Entry glow
+  // 7. Entry glow
   drawGlow(ctx, entryPt, 180 * sc, [220, 228, 255]);
+
+  // 8. Compute internal ray paths (no drawing)
+  const rayPaths = computeInternalRayPaths(entryPt, intAngles, intAvg, verts, bands, beamWidth, W, entryFaceDir, thetaI, exitPt, internalSpread);
+
+  // 9. Prism fill (background, below internal rays)
+  drawPrismFill(ctx, verts);
+
+  // 10. Internal rays (clipped to prism shape, on top of fill)
+  drawInternalRays(ctx, verts, bands, glowSpan, rayPaths);
+
+  // 11. Exit bands
+  drawExitBands(ctx, rayPaths.perColorExits, exitBase, exitAngles, exitAvg, bands, spread, W, glowSpan);
+
+  // 12. Prism edges (on top of internal rays and exit bands)
+  drawPrismEdges(ctx, verts, W);
+
+  // 11. Bloom
+  if (showBloom) applyBloom(ctx, W, H);
+
+  // 12. Exit glow
+  drawGlow(ctx, exitPt, 220 * sc, [255, 255, 255]);
 
   // 13. Vignette
   applyVignette(ctx, W, H);
