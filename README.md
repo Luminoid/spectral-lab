@@ -136,9 +136,9 @@ spectral-lab/
   icons/          # Favicons, touch icons, OG image
   _headers        # Cloudflare Pages security headers
   _redirects      # Cloudflare Pages language redirect
-  LICENSE         # CC BY-NC 4.0
+  LICENSE         # CC BY-NC-SA 4.0
 ```
 
 ## License
 
-CC BY-NC 4.0 — Non-commercial use. Generated images are free to use, including commercially.
+CC BY-NC-SA 4.0 — Non-commercial use, derivatives must share alike. Generated images are free to use, including commercially.
